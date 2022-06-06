@@ -28,17 +28,21 @@
 </template>
 
 <script lang="ts">
+import { defineComponent } from "vue";
 import { canvas } from "zcanvas";
 import { mapState } from "pinia";
 import { useWorldStore } from "../../stores/world";
-import { TileDef } from "@/definitions/world-tiles";
+import type { TileDef } from "@/definitions/world-tiles";
+import { TILE_SIZE } from "@/definitions/world-tiles";
 import WorldRenderer from "@/renderers/world-renderer";
 
 const MIN_AMOUNT_OF_TILES = 9; // minimum amount of tiles visible on the dominant axis of the screen
 const renderer = new WorldRenderer();
-let zcanvas, terrain;
+let zCanvasInstance: canvas;
+let terrain;
+let handlers: { event: string, callback: EventListenerOrEventListenerObject }[] = [];
 
-export default {
+export default defineComponent({
     computed: {
         ...mapState( useWorldStore, [
             "terrain",
@@ -49,7 +53,7 @@ export default {
          * Construct zCanvas instance to render the game world. The zCanvas
          * also maintains the game loop that will update the world prior to each render cycle.
          */
-        zcanvas = new canvas({
+        zCanvasInstance = new canvas({
             width: window.innerWidth,
             height: window.innerHeight,
             animate: true,
@@ -58,22 +62,24 @@ export default {
             onUpdate: this.updateGame.bind( this ),
             backgroundColor: "#0000FF"
         });
+
         // attach event handlers
-        this.handlers = [];
         const resizeEvent = "onorientationchange" in window ? "orientationchange" : "resize";
-        this.handlers.push({ event: resizeEvent, callback: this.handleResize.bind( this ) });
-        this.handlers.forEach(({ event, callback }) => {
+        handlers.push({ event: resizeEvent, callback: this.handleResize.bind( this ) });
+        handlers.forEach(({ event, callback }) => {
             window.addEventListener( event, callback );
         });
-        zcanvas.insertInPage( this.$refs.canvasContainer );
-        zcanvas.addChild( renderer );
+
+        // attach renderers and insert into page
+        zCanvasInstance.insertInPage( this.$refs.canvasContainer as HTMLElement );
+        zCanvasInstance.addChild( renderer );
     },
     destroyed(): void {
-        this.handlers.forEach(({ event, callback }) => {
+        handlers.forEach(({ event, callback }) => {
             window.removeEventListener( event, callback );
         });
-        this.handlers.length = 0;
-        zcanvas.dispose();
+        handlers.length = 0;
+        zCanvasInstance.dispose();
     },
     watch: {
         terrain: {
@@ -85,10 +91,10 @@ export default {
     },
     methods: {
         handleResize(): void {
-            const tileWidth = 20;
-            const tileHeight = 20; // TODO list somewhere
-
             const { clientWidth, clientHeight } = document.documentElement;
+            const tileWidth  = TILE_SIZE;
+            const tileHeight = TILE_SIZE;
+
             let tilesInWidth, tilesInHeight;
 
             if ( clientWidth > clientHeight ) {
@@ -100,12 +106,12 @@ export default {
                 tilesInWidth  = tileWidth * MIN_AMOUNT_OF_TILES;
                 tilesInHeight = Math.round(( clientHeight / clientWidth ) * tilesInWidth );
             }
-            zcanvas.setDimensions( tilesInWidth, tilesInHeight );
-            zcanvas.scale( clientWidth / tilesInWidth, clientHeight / tilesInHeight );
+            zCanvasInstance.setDimensions( tilesInWidth, tilesInHeight );
+            zCanvasInstance.scale( clientWidth / tilesInWidth, clientHeight / tilesInHeight );
         },
         updateGame(): void {
 
         }
     }
-};
+});
 </script>

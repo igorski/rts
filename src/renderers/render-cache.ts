@@ -27,12 +27,16 @@ const ASSETS = {
     TILES: "tiles.png"
 };
 
-const CACHE = {
+type CACHE_ENTRIES = {
+    [key: string]: HTMLImageElement;
+};
+
+const CACHE: CACHE_ENTRIES = {
     TILES: new Image(),
 };
 export default CACHE;
 
-export const initCache = () => {
+export const initCache = (): Promise<void> => {
     return new Promise( async ( resolve, reject ) => {
         const entries = Object.entries( ASSETS );
         for ( let i = 0; i < entries.length; ++i ) {

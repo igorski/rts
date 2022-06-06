@@ -32,4 +32,4 @@ export interface TileDef {
     type: TileTypes;
 };
 
-export const TILE_SIZE = 100;
+export const TILE_SIZE: number = 100;

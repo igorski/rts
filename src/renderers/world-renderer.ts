@@ -27,18 +27,21 @@ import CACHE from "./render-cache";
 const { TILES } = CACHE;
 
 export default class WorldRenderer extends sprite {
+    private pos: { x: number, y: number } = { x: 0, y: 0};
+    private terrain: TileDef[] = [];
+
     setTerrain( terrain: TileDef[] ) {
         this.terrain = terrain;
-
-        this.pos = { x: 0, y: 0 };
     }
 
-    handleInteraction( x, y, event ) {
+    handleInteraction( x: number, y: number, event: Event ): boolean {
         this.pos.x = x;
         this.pos.y = y;
+
+        return true;
     }
 
-    draw( ctx ) {
+    draw( ctx: CanvasRenderingContext2D ) {
         ctx.beginPath();
         const MARGIN = 5;
         for ( let i = 0, l = this.terrain.length; i < l; ++i ) {

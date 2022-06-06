@@ -27,15 +27,7 @@ interface STATE {
     terrain: TileDef[];
 }
 
-interface GETTERS {
-
-}
-
-interface ACTIONS {
-    addObject: ( obj: any ) => void;
-}
-
-export const useWorldStore = defineStore<string, STATE, GETTERS, ACTIONS>( "world", {
+export const useWorldStore = defineStore<string, STATE>( "world", {
     state: () => ({
         terrain : [
             // 3 x 3 square of water
@@ -56,11 +48,13 @@ export const useWorldStore = defineStore<string, STATE, GETTERS, ACTIONS>( "worl
         ]
     }),
     getters: {
-
+        nothing( state: STATE ): boolean {
+            return true;
+        }
     },
     actions: {
-        addObject( obj: any ) {
-            this.counter++;
+        addObject( obj: any ): void {
+
         }
     }
 });
