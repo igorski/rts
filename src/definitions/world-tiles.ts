@@ -21,8 +21,22 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 export enum TileTypes {
+    GROUND,
+    GRASS,
+    SAND,
+    ROAD,
     WATER,
-    GROUND
+    MOUNTAIN,
+    TREE,
+    NOTHING,
+};
+
+export interface EnvironmentDef {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    terrain: TileDef[];
 };
 
 export interface TileDef {

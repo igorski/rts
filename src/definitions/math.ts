@@ -20,21 +20,21 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-import { defineStore } from "pinia";
-import type { EnvironmentDef } from "@/definitions/world-tiles";
-import WorldFactory from "@/model/factories/world-factory";
+export type Point = {
+    x: number,
+    y: number
+};
 
-interface STATE {
-    world: EnvironmentDef;
-}
+export type Box = {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+};
 
-export const useWorldStore = defineStore<string, STATE>( "world", {
-    state: (): STATE => ({
-        world : WorldFactory.populate( WorldFactory.create())
-    }),
-    actions: {
-        addObject( obj: any ): void {
-
-        }
-    }
-});
+export type Rectangle = {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+};

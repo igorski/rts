@@ -39,13 +39,12 @@ import WorldRenderer from "@/renderers/world-renderer";
 const MIN_AMOUNT_OF_TILES = 9; // minimum amount of tiles visible on the dominant axis of the screen
 const renderer = new WorldRenderer();
 let zCanvasInstance: canvas;
-let terrain;
 let handlers: { event: string, callback: EventListenerOrEventListenerObject }[] = [];
 
 export default defineComponent({
     computed: {
         ...mapState( useWorldStore, [
-            "terrain",
+            "world",
         ]),
     },
     mounted(): void {
@@ -73,6 +72,9 @@ export default defineComponent({
         // attach renderers and insert into page
         zCanvasInstance.insertInPage( this.$refs.canvasContainer as HTMLElement );
         zCanvasInstance.addChild( renderer );
+
+        this.handleResize();
+        renderer.setWorld( this.world );
     },
     destroyed(): void {
         handlers.forEach(({ event, callback }) => {
@@ -80,14 +82,6 @@ export default defineComponent({
         });
         handlers.length = 0;
         zCanvasInstance.dispose();
-    },
-    watch: {
-        terrain: {
-            immediate: true,
-            handler( value: TileDef[] ): void {
-                renderer.setTerrain( [ ...value ] );
-            }
-        },
     },
     methods: {
         handleResize(): void {
@@ -106,8 +100,8 @@ export default defineComponent({
                 tilesInWidth  = tileWidth * MIN_AMOUNT_OF_TILES;
                 tilesInHeight = Math.round(( clientHeight / clientWidth ) * tilesInWidth );
             }
-            zCanvasInstance.setDimensions( tilesInWidth, tilesInHeight );
-            zCanvasInstance.scale( clientWidth / tilesInWidth, clientHeight / tilesInHeight );
+            //zCanvasInstance.setDimensions( tilesInWidth, tilesInHeight );
+            //zCanvasInstance.scale( clientWidth / tilesInWidth, clientHeight / tilesInHeight );
         },
         updateGame(): void {
 
