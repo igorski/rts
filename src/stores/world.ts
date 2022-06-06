@@ -1,0 +1,66 @@
+/**
+ * The MIT License (MIT)
+ *
+ * Igor Zinken 2022 - https://www.igorski.nl
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+import { defineStore } from "pinia";
+import { type TileDef, TileTypes } from "@/definitions/world-tiles";
+
+interface STATE {
+    terrain: TileDef[];
+}
+
+interface GETTERS {
+
+}
+
+interface ACTIONS {
+    addObject: ( obj: any ) => void;
+}
+
+export const useWorldStore = defineStore<string, STATE, GETTERS, ACTIONS>( "world", {
+    state: () => ({
+        terrain : [
+            // 3 x 3 square of water
+            { x: 0, y: 0, height: 1, type: TileTypes.WATER },
+            { x: 1, y: 0, height: 1, type: TileTypes.WATER },
+            { x: 2, y: 0, height: 1, type: TileTypes.WATER },
+            { x: 0, y: 1, height: 1, type: TileTypes.WATER },
+            { x: 1, y: 1, height: 1, type: TileTypes.WATER },
+            { x: 2, y: 1, height: 1, type: TileTypes.WATER },
+            { x: 0, y: 2, height: 1, type: TileTypes.WATER },
+            { x: 1, y: 2, height: 1, type: TileTypes.WATER },
+            { x: 2, y: 2, height: 1, type: TileTypes.WATER },
+
+            // 1 x 3 strip of land
+            { x: 0, y: 1, height: 1, type: TileTypes.GROUND },
+            { x: 1, y: 1, height: 2, type: TileTypes.GROUND },
+            { x: 2, y: 1, height: 1, type: TileTypes.GROUND },
+        ]
+    }),
+    getters: {
+
+    },
+    actions: {
+        addObject( obj: any ) {
+            this.counter++;
+        }
+    }
+});
