@@ -25,18 +25,29 @@
         ref="canvasContainer"
         class="world-renderer"
     ></div>
+    <div class="world-ui">
+        <div class="world-map">
+            <div
+                ref="mapContainer"
+                class="world-map"
+            ></div>
+            <div class="player-position" :style="{ left: `${world.x}px`, top: `${world.y}px` }"></div>
+        </div>
+    </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
 import { canvas } from "zcanvas";
-import { mapState } from "pinia";
+import { mapState, mapActions } from "pinia";
 import { useWorldStore } from "../../stores/world";
-import type { TileDef } from "@/definitions/world-tiles";
+import type { EnvironmentDef, TileDef } from "@/definitions/world-tiles";
 import { TILE_SIZE } from "@/definitions/world-tiles";
+import CACHE, { initCache } from "@/renderers/render-cache";
+import { renderWorldMap } from "@/renderers/map-renderer";
 import WorldRenderer from "@/renderers/world-renderer";
 
-const MIN_AMOUNT_OF_TILES = 9; // minimum amount of tiles visible on the dominant axis of the screen
+const MIN_AMOUNT_OF_TILES = 5; // minimum amount of tiles visible on the dominant axis of the screen
 const renderer = new WorldRenderer();
 let zCanvasInstance: canvas;
 let handlers: { event: string, callback: EventListenerOrEventListenerObject }[] = [];
@@ -45,9 +56,11 @@ export default defineComponent({
     computed: {
         ...mapState( useWorldStore, [
             "world",
+            "playerX",
+            "playerY",
         ]),
     },
-    mounted(): void {
+    async mounted(): void {
         /**
          * Construct zCanvas instance to render the game world. The zCanvas
          * also maintains the game loop that will update the world prior to each render cycle.
@@ -56,11 +69,16 @@ export default defineComponent({
             width: window.innerWidth,
             height: window.innerHeight,
             animate: true,
-            smoothing: false,
+            smoothing: true,
             fps: 60,
             onUpdate: this.updateGame.bind( this ),
             backgroundColor: "#0000FF"
         });
+
+        // render world map
+        console.warn( 'Render world' );
+        await initCache();
+        renderWorldMap( this.world );
 
         // attach event handlers
         const resizeEvent = "onorientationchange" in window ? "orientationchange" : "resize";
@@ -73,8 +91,14 @@ export default defineComponent({
         zCanvasInstance.insertInPage( this.$refs.canvasContainer as HTMLElement );
         zCanvasInstance.addChild( renderer );
 
-        this.handleResize();
         renderer.setWorld( this.world );
+        this.handleResize();
+
+        // keyboard control : todo put somewhere else
+        this.keyHandler = this.handleKeyDown.bind( this );
+        document.body.addEventListener( "keydown", this.keyHandler );
+
+        this.$refs.mapContainer.appendChild( CACHE.map.flat );
     },
     destroyed(): void {
         handlers.forEach(({ event, callback }) => {
@@ -82,8 +106,13 @@ export default defineComponent({
         });
         handlers.length = 0;
         zCanvasInstance.dispose();
+        document.body.removeEventListener( "keydown", this.keyHandler );
     },
     methods: {
+        ...mapActions( useWorldStore, [
+            "setPlayerX",
+            "setPlayerY",
+        ]),
         handleResize(): void {
             const { clientWidth, clientHeight } = document.documentElement;
             const tileWidth  = TILE_SIZE;
@@ -100,12 +129,57 @@ export default defineComponent({
                 tilesInWidth  = tileWidth * MIN_AMOUNT_OF_TILES;
                 tilesInHeight = Math.round(( clientHeight / clientWidth ) * tilesInWidth );
             }
-            //zCanvasInstance.setDimensions( tilesInWidth, tilesInHeight );
-            //zCanvasInstance.scale( clientWidth / tilesInWidth, clientHeight / tilesInHeight );
+            console.warn(clientWidth,clientHeight,tilesInWidth,tilesInHeight);
+            zCanvasInstance.setDimensions( tilesInWidth, tilesInHeight );
+            zCanvasInstance.scale( clientWidth / tilesInWidth, clientHeight / tilesInHeight );
+            renderer.setTileDimensions( tilesInWidth, tilesInHeight );
         },
         updateGame(): void {
 
+        },
+        handleKeyDown( e: KeyboardEvent ): void {
+            // TODO : useWorldStore() should be cached
+            switch ( e.key ) {
+                default:
+                    return;
+                case "ArrowLeft":
+                    this.setPlayerX( this.playerX( useWorldStore()) - 1 );
+                    this.setPlayerY( this.playerY( useWorldStore()) + 1 );
+                    break;
+                case "ArrowRight":
+                    this.setPlayerX( this.playerX( useWorldStore()) + 1 );
+                    this.setPlayerY( this.playerY( useWorldStore()) - 1 );
+                    break;
+                case "ArrowUp":
+                    this.setPlayerY( this.playerY( useWorldStore()) - 1 );
+                    this.setPlayerX( this.playerX( useWorldStore()) - 1 );
+                    break;
+                case "ArrowDown":
+                    this.setPlayerY( this.playerY( useWorldStore()) + 1 );
+                    this.setPlayerX( this.playerX( useWorldStore()) + 1 );
+                    break;
+            }
+            e.preventDefault();
         }
     }
 });
 </script>
+
+<style scoped>
+.world-ui {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+}
+
+.world-map {
+    position: relative;
+}
+
+.player-position {
+    position: absolute;
+    background-color: red;
+    width: 1px;
+    height: 1px;
+}
+</style>

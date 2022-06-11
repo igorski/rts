@@ -32,9 +32,16 @@ export const useWorldStore = defineStore<string, STATE>( "world", {
     state: (): STATE => ({
         world : WorldFactory.populate( WorldFactory.create())
     }),
+    getters: {
+        playerX: number => ( state: STATE ) => state.world.x,
+        playerY: number => ( state: STATE ) => state.world.y,
+    },
     actions: {
-        addObject( obj: any ): void {
-
-        }
+        setPlayerX( value: number ): void {
+            this.world.x = Math.max( 0, Math.min( this.world.width, value ));
+        },
+        setPlayerY( value: number ): void {
+            this.world.y = Math.max( 0, Math.min( this.world.height, value ));
+        },
     }
 });

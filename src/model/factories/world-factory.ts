@@ -5,9 +5,10 @@ import { TileTypes, type EnvironmentDef } from "@/definitions/world-tiles";
 import { findPath } from "@/utils/path-finder";
 import {
     growTerrain, getSurroundingIndices, getSurroundingTiles,
-    getRectangleForIndices, coordinateToIndex, indexToCoordinate
+    getBoxForIndices, coordinateToIndex, indexToCoordinate
 } from "@/utils/terrain-util";
 import { random, randomInRangeInt } from "@/utils/random-util";
+import TileFactory from "./tile-factory";
 
 const DEBUG = process.env.NODE_ENV === "development";
 
@@ -35,7 +36,7 @@ const WorldFactory =
      * calculated for given hash
      */
     populate( world: EnvironmentDef ): EnvironmentDef {
-        let size = 175; // amount of horizontal and vertical tiles in the world
+        const size = 100; // amount of horizontal and vertical tiles in the world
 
         world.width  = size;
         world.height = size;
@@ -92,8 +93,9 @@ function generateTerrain( world: EnvironmentDef ) {
     // first create the GROUND
 
     world.terrain = new Array( MAP_WIDTH * MAP_HEIGHT );
-    for ( let i = 0, x = 0, y = 0; y < MAP_HEIGHT; x = ( ++x === MAP_WIDTH ? ( x % MAP_WIDTH + ( ++y & 0 )) : x ), ++i ) {
-        world.terrain[ i ] = { x, y, type: TileTypes.SAND, height: 1 };
+    for ( let x = 0, y = 0; y < MAP_HEIGHT; x = ( ++x === MAP_WIDTH ? ( x % MAP_WIDTH + ( ++y & 0 )) : x )) {
+        const index = coordinateToIndex( x, y, world );
+        world.terrain[ index ] = TileFactory.create( x, y, TileTypes.SAND, 1 );
     }
 
     //digRoads( MAP_WIDTH, MAP_HEIGHT );
@@ -102,11 +104,13 @@ function generateTerrain( world: EnvironmentDef ) {
 
     function genSeed( type: TileTypes, size: number ) {
         const WS = Math.ceil( MAP_WIDTH * MAP_HEIGHT / 1000 );
+        const heightTiles = [ TileTypes.MOUNTAIN, TileTypes.SAND ];
         for ( i = 0; i < WS; i++ ) {
             x = Math.floor( random() * MAP_WIDTH );
             y = Math.floor( random() * MAP_HEIGHT );
             index = coordinateToIndex( x, y, world );
-            world.terrain[ index ] = { x, y, type, height: 1 };
+            const height = heightTiles.includes( type ) ? randomInRangeInt( 1, 5 ) : 1;
+            world.terrain[ index ] = TileFactory.create( x, y, type, height );
         }
         for ( i = 0; i < size; i++ ) {
             growTerrain( world.terrain, MAP_WIDTH, MAP_HEIGHT, type );
@@ -195,7 +199,7 @@ function digRoads( worldWidth: number, worldHeight: number ) {
     // init output terrain map
 
     for ( let x = 0; x < worldWidth; ++x ) {
-        map[ x ] = new Array( worldHeight ).fill( TileTypes.NOTHING );
+        map[ x ] = new Array( worldHeight ).fill( TileTypes.GROUND );
     }
 
     // create map
@@ -217,7 +221,7 @@ function digRoads( worldWidth: number, worldHeight: number ) {
 
     for ( let x = 0; x < xl; ++x ) {
         for ( let y = 0; y < yl; ++y ) {
-            terrain[ y * xl + x ] = { x, y, height: 1, type: map[ x ][ y ] };
+            terrain[ coordinateToIndex( x, y, { width: worldWidth }) ] = TileFactory.create( x, y, map[ x ][ y ], 1 );
         }
     }
     return terrain;

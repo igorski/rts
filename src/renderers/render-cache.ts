@@ -27,12 +27,24 @@ const ASSETS = {
     TILES: "tiles.png"
 };
 
-type CACHE_ENTRIES = {
-    [key: string]: HTMLImageElement;
+type Cache = {
+    sprites: {
+        [key: string]: HTMLImageElement;
+    },
+    map: {
+        flat: HTMLCanvasElement;
+        isometric: HTMLCanvasElement;
+    }
 };
 
-const CACHE: CACHE_ENTRIES = {
-    TILES: new Image(),
+const CACHE: Cache = {
+    sprites: {
+        TILES: new Image()
+    },
+    map: {
+        flat: document.createElement( "canvas" ),
+        isometric: document.createElement( "canvas" )
+    }
 };
 export default CACHE;
 
@@ -42,7 +54,7 @@ export const initCache = (): Promise<void> => {
         for ( let i = 0; i < entries.length; ++i ) {
             const [ key, path ] = entries[ i ];
             try {
-                await loader.loadImage( `${ASSET_FOLDER}${path}`, CACHE[ key ]);
+                await loader.loadImage( `${ASSET_FOLDER}${path}`, CACHE.sprites[ key ]);
             } catch ( e ) {
                 reject( e );
             }

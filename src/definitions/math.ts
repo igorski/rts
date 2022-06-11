@@ -25,14 +25,14 @@ export type Point = {
     y: number
 };
 
-export type Box = {
+export type Rectangle = {
     left: number;
     top: number;
     width: number;
     height: number;
 };
 
-export type Rectangle = {
+export type Box = {
     left: number;
     top: number;
     right: number;

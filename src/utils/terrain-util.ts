@@ -1,5 +1,6 @@
 import type { Point, Rectangle } from "@/definitions/math";
 import { TileTypes, type EnvironmentDef, type TileDef } from "@/definitions/world-tiles";
+import TileFactory from "@/model/factories/tile-factory";
 import { findPath } from "@/utils/path-finder";
 import { random, randomInRangeInt } from "@/utils/random-util";
 
@@ -16,7 +17,9 @@ export const growTerrain = ( map: TileDef[], mapWidth: number, mapHeight: number
             const pi = getSurroundingIndices( x, y, mapWidth, mapHeight, random() > 0.7, 3 );
             for ( i = 0; i < pi.length; i++ ) {
                 if ( random() > chanceThreshold ) {
-                    map[ pi[ i ] ] = { x, y, type, height: 1 };
+                    const idx = pi[ i ];
+                    const coord = indexToCoordinate( idx, { width: mapWidth });
+                    map[ idx ] = TileFactory.create( coord.x, coord.y, type, 1 );
                 }
             }
         }
@@ -48,7 +51,7 @@ export const getSurroundingIndices = ( x: number, y: number, mapWidth: number, m
 /**
  * Gets the bounding box coordinates described by a list of indices
  */
-export const getRectangleForIndices = ( indices: number[], environment: EnvironmentDef ): Rectangle => {
+export const getBoxForIndices = ( indices: number[], environment: EnvironmentDef ): Box => {
     let left   = Infinity;
     let right  = -Infinity;
     let top    = Infinity;
@@ -120,7 +123,7 @@ export const getSurroundingTiles = ( x: number, y: number, environment: Environm
     const out = getSurroundingIndicesForPoint( x, y, environment );
     Object.entries( out ).forEach(([ key, value ]) => {
         // @ts-expect-error
-        out[ key ] = terrain[ value ];
+        out[ key ] = terrain[ value ].type;
     });
     return out;
 };

@@ -21,10 +21,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 <script setup lang="ts">
-import { initCache } from "@/renderers/render-cache";
 import World from "./components/world/world.vue";
-
-initCache();
 </script>
 
 <template>
@@ -37,11 +34,16 @@ initCache();
 body {
     margin: 0;
     padding: 0;
+    overflow: hidden;
+}
+
+#app {
+    width: 100%;
+    overflow: hidden;
 }
 
 .rts {
-    max-width: 1280px;
-    margin: 0 auto;
+    width: 100%;
     font-weight: normal;
 }
 </style>
