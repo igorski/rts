@@ -88,12 +88,12 @@ export default WorldFactory;
  * blatantly stolen from code by Igor Kogan (okay, he kindly donated it)
  */
 function generateTerrain( world: EnvironmentDef ) {
-    const MAP_WIDTH = world.width, MAP_HEIGHT = world.height;
+    const { width, height } = world;
 
     // first create the GROUND
 
-    world.terrain = new Array( MAP_WIDTH * MAP_HEIGHT );
-    for ( let x = 0, y = 0; y < MAP_HEIGHT; x = ( ++x === MAP_WIDTH ? ( x % MAP_WIDTH + ( ++y & 0 )) : x )) {
+    world.terrain = new Array( width * height );
+    for ( let x = 0, y = 0; y < height; x = ( ++x === width ? ( x % width + ( ++y & 0 )) : x )) {
         const index = coordinateToIndex( x, y, world );
         world.terrain[ index ] = TileFactory.create( x, y, TileTypes.SAND, 1 );
     }
@@ -103,17 +103,17 @@ function generateTerrain( world: EnvironmentDef ) {
     let x, y, i, index;
 
     function genSeed( type: TileTypes, size: number ) {
-        const WS = Math.ceil( MAP_WIDTH * MAP_HEIGHT / 1000 );
+        const WS = Math.ceil( width * height / 1000 );
         const heightTiles = [ TileTypes.MOUNTAIN, TileTypes.SAND ];
         for ( i = 0; i < WS; i++ ) {
-            x = Math.floor( random() * MAP_WIDTH );
-            y = Math.floor( random() * MAP_HEIGHT );
+            x = Math.floor( random() * width );
+            y = Math.floor( random() * height );
             index = coordinateToIndex( x, y, world );
-            const height = heightTiles.includes( type ) ? randomInRangeInt( 1, 5 ) : 1;
-            world.terrain[ index ] = TileFactory.create( x, y, type, height );
+            const tileHeight = heightTiles.includes( type ) ? randomInRangeInt( 1, 5 ) : 1;
+            world.terrain[ index ] = TileFactory.create( x, y, type, tileHeight );
         }
         for ( i = 0; i < size; i++ ) {
-            growTerrain( world.terrain, MAP_WIDTH, MAP_HEIGHT, type );
+            growTerrain( world, type );
         }
     }
 
@@ -125,10 +125,10 @@ function generateTerrain( world: EnvironmentDef ) {
 
     const beachSize = randomInRangeInt( 5, 10 );
 
-    for ( x = 0, y = 0; y < MAP_HEIGHT; x = ( ++x === MAP_WIDTH ? ( x % MAP_WIDTH + ( ++y & 0 )) : x )) {
+    for ( x = 0, y = 0; y < height; x = ( ++x === width ? ( x % width + ( ++y & 0 )) : x )) {
         const index = coordinateToIndex( x, y, world );
         if ( world.terrain[ index ].type === TileTypes.GROUND ) {
-            const around = getSurroundingIndices( x, y, MAP_WIDTH, MAP_HEIGHT, true, beachSize );
+            const around = getSurroundingIndices( x, y, width, height, true, beachSize );
             for ( i = 0; i < around.length; i++ ) {
                 if ( world.terrain[ around[ i ]].type === TileTypes.WATER && random() > .7 ) {
                     world.terrain[ index ].type = TileTypes.SAND;
@@ -140,11 +140,11 @@ function generateTerrain( world: EnvironmentDef ) {
 
     // plant some trees in the parks
 
-    const TS = Math.ceil( MAP_WIDTH * MAP_HEIGHT * 0.1 );
+    const TS = Math.ceil( width * height * 0.1 );
 
     for ( i = 0; i < TS; i++ ) {
-        x     = Math.floor( random() * MAP_WIDTH );
-        y     = Math.floor( random() * MAP_HEIGHT );
+        x     = Math.floor( random() * width );
+        y     = Math.floor( random() * height );
         index = coordinateToIndex( x, y, world );
 
         if ( world.terrain[ index ].type === TileTypes.GRASS ) {
@@ -154,17 +154,17 @@ function generateTerrain( world: EnvironmentDef ) {
 
     // now clean up possible weirdness
 
-    for ( x = 0, y = 0; y < MAP_HEIGHT; x = ( ++x === MAP_WIDTH ? ( x % MAP_WIDTH + ( ++y & 0 )) : x )) {
-        if ( x === 0 || x === MAP_WIDTH - 1 || y === 0 || y === MAP_HEIGHT - 1 ) {
+    for ( x = 0, y = 0; y < height; x = ( ++x === width ? ( x % width + ( ++y & 0 )) : x )) {
+        if ( x === 0 || x === width - 1 || y === 0 || y === height - 1 ) {
             continue; // ignore tiles at world edges
         }
         const tileIndex = coordinateToIndex( x, y, world );
         const tile = world.terrain[ tileIndex ];
         const surroundingTiles = getSurroundingTiles( x, y, world );
-        // get rid of tiles that are surrounded by completely different tiles
-        if ( !Object.values( surroundingTiles ).includes( tile )) {
+        // get rid of individual tiles that are surrounded by completely different tiles
+        if ( !Object.values( surroundingTiles ).includes( tile.type )) {
             if ( tile.type === TileTypes.GRASS ) {
-                // if the tile was grass, just plant a tree, it probably looks cute!
+                // if the tile was grass, just plant a tree
                 world.terrain[ tileIndex ].type = TileTypes.TREE;
             } else {
                 world.terrain[ tileIndex ].type = surroundingTiles.left;
@@ -221,7 +221,9 @@ function digRoads( worldWidth: number, worldHeight: number ) {
 
     for ( let x = 0; x < xl; ++x ) {
         for ( let y = 0; y < yl; ++y ) {
-            terrain[ coordinateToIndex( x, y, { width: worldWidth }) ] = TileFactory.create( x, y, map[ x ][ y ], 1 );
+            terrain[
+                coordinateToIndex( x, y, { width: worldWidth } as EnvironmentDef )
+            ] = TileFactory.create( x, y, map[ x ][ y ], 1 );
         }
     }
     return terrain;

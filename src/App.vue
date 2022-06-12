@@ -21,16 +21,20 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 <script setup lang="ts">
-import World from "./components/world/world.vue";
+import GameCanvas from "./components/game-canvas/game-canvas.vue";
+import WorldMap from "./components/world-map/world-map.vue";
 </script>
 
 <template>
     <div class="rts">
-        <world />
+        <game-canvas />
+        <div class="game-ui">
+            <world-map />
+        </div>
     </div>
 </template>
 
-<style>
+<style lang="scss">
 body {
     margin: 0;
     padding: 0;
@@ -41,9 +45,17 @@ body {
     width: 100%;
     overflow: hidden;
 }
+</style>
 
+<style lang="scss" scoped>
 .rts {
     width: 100%;
     font-weight: normal;
+}
+
+.game-ui {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
 }
 </style>

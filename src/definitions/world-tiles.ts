@@ -62,5 +62,5 @@ export const Y_DISPLACEMENT_VER = 0.5 * TILE_SIZE / 2;
 export const horPosition = ( x: number, y: number ): number => ( x * X_DISPLACEMENT_HOR + y * Y_DISPLACEMENT_HOR );
 export const verPosition = ( x: number, y: number ): number => ( x * X_DISPLACEMENT_VER + y * Y_DISPLACEMENT_VER );
 
-export const amountOfTilesInWidth  : number = ( width: number )  => width  / X_DISPLACEMENT_HOR;
-export const amountOfTilesInHeight : number = ( height: number ) => height / -Y_DISPLACEMENT_HOR;
+export const amountOfTilesInWidth = ( width: number ): number => width  / X_DISPLACEMENT_HOR;
+export const amountOfTilesInHeight = ( height: number ): number => height / -Y_DISPLACEMENT_HOR;

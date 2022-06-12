@@ -1,4 +1,4 @@
-import type { Point, Rectangle } from "@/definitions/math";
+import type { Point, Box } from "@/definitions/math";
 import { TileTypes, type EnvironmentDef, type TileDef } from "@/definitions/world-tiles";
 import TileFactory from "@/model/factories/tile-factory";
 import { findPath } from "@/utils/path-finder";
@@ -8,18 +8,18 @@ import { random, randomInRangeInt } from "@/utils/random-util";
  * grow the amount of terrain of given type on the given map
  * blatantly stolen from code by Igor Kogan
  */
-export const growTerrain = ( map: TileDef[], mapWidth: number, mapHeight: number, type: TileTypes, chanceThreshold: number = 0.7 ) => {
-    let x, y, i, index;
+export const growTerrain = ( world: EnvironmentDef, type: TileTypes, chanceThreshold: number = 0.7 ) => {
+    const { terrain, width, height } = world;
 
-    for ( x = 0, y = 0; y < mapHeight; x = ( ++x === mapWidth ? ( x % mapWidth + ( ++y & 0 ) ) : x )) {
-        index = coordinateToIndex( x, y, { width: mapWidth } as EnvironmentDef );
-        if ( map[ index ].type === type ) {
-            const pi = getSurroundingIndices( x, y, mapWidth, mapHeight, random() > 0.7, 3 );
-            for ( i = 0; i < pi.length; i++ ) {
+    for ( let x = 0, y = 0; y < height; x = ( ++x === width ? ( x % width + ( ++y & 0 ) ) : x )) {
+        const index = coordinateToIndex( x, y, world );
+        if ( terrain[ index ].type === type ) {
+            const pi = getSurroundingIndices( x, y, width, height, random() > 0.7, 3 );
+            for ( let i = 0; i < pi.length; i++ ) {
                 if ( random() > chanceThreshold ) {
                     const idx = pi[ i ];
-                    const coord = indexToCoordinate( idx, { width: mapWidth });
-                    map[ idx ] = TileFactory.create( coord.x, coord.y, type, 1 );
+                    const coord = indexToCoordinate( idx, world );
+                    terrain[ idx ] = TileFactory.create( coord.x, coord.y, type, 1 );
                 }
             }
         }
@@ -56,6 +56,7 @@ export const getBoxForIndices = ( indices: number[], environment: EnvironmentDef
     let right  = -Infinity;
     let top    = Infinity;
     let bottom = -Infinity;
+
     indices.forEach( index => {
         const { x, y } = indexToCoordinate( index, environment );
         left   = Math.min( left, x );
@@ -118,14 +119,15 @@ export const positionAtRandomFreeTileType = ( terrain: TileDef[], tileType: Tile
  * Retrieves all eight tiles surrounding the given coordinate
  * TODO: there is no bounds checking here, so coordinate must not be at world edge
  */
-export const getSurroundingTiles = ( x: number, y: number, environment: EnvironmentDef ): SurroundingIndices => {
+export const getSurroundingTiles = ( x: number, y: number, environment: EnvironmentDef ): SurroundingTiles => {
     const { terrain } = environment;
     const out = getSurroundingIndicesForPoint( x, y, environment );
-    Object.entries( out ).forEach(([ key, value ]) => {
-        // @ts-expect-error
-        out[ key ] = terrain[ value ].type;
-    });
-    return out;
+    return Object.entries( out ).reduce(( acc: SurroundingTiles, [ key, value ]) => {
+        return {
+            ...acc,
+            [ key ]: terrain[ value ].type,
+        };
+    }, {});
 };
 
 /**
@@ -136,6 +138,10 @@ export const assertSurroundingTilesOfTypeAroundPoint = ( x: number, y: number, e
     const { terrain } = environment;
     const surrounding = Object.values( getSurroundingIndicesForPoint( x, y, environment ));
     return !surrounding.some( tile => terrain[ tile ].type !== tileType );
+};
+
+type SurroundingTiles = {
+    [key: string]: TileTypes;
 };
 
 interface SurroundingIndices {

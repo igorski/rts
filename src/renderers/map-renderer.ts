@@ -20,6 +20,7 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+import type { EnvironmentDef } from "@/definitions/world-tiles";
 import {
     TileTypes, TILE_SIZE, TILE_WIDTH_HALF, TILE_HEIGHT_HALF, horPosition, verPosition
 } from "@/definitions/world-tiles";
@@ -27,6 +28,8 @@ import { coordinateToIndex } from "@/utils/terrain-util";
 import CACHE from "./render-cache";
 
 const { TILES } = CACHE.sprites;
+
+export const CVS_2D_MAGNIFIER = 2;
 
 /**
  * Renders given worlds tiled terrain into a pre-rendered HTMLCanvasElement
@@ -36,14 +39,14 @@ export const renderWorldMap = ( world: EnvironmentDef ) => {
     const mapHeight = verPosition( world.width, world.height ) + TILE_HEIGHT_HALF;
 
     const cvs2D: HTMLCanvasElement = CACHE.map.flat;
-    const ctx2D: CanvasRenderingContext2D = cvs2D.getContext( "2d" );
+    const ctx2D: CanvasRenderingContext2D = cvs2D.getContext( "2d" ) as CanvasRenderingContext2D;
 
-    cvs2D.width  = world.width;
-    cvs2D.height = world.height;
+    cvs2D.width  = world.width  * CVS_2D_MAGNIFIER;
+    cvs2D.height = world.height * CVS_2D_MAGNIFIER;
     ctx2D.clearRect( 0, 0, cvs2D.width, cvs2D.height );
 
     const cvsIsometric: HTMLCanvasElement = CACHE.map.isometric;
-    const ctxIsometric: CanvasRenderingContext2D = cvsIsometric.getContext( "2d" );
+    const ctxIsometric: CanvasRenderingContext2D = cvsIsometric.getContext( "2d" ) as CanvasRenderingContext2D;
 
     cvsIsometric.width  = mapWidth;
     cvsIsometric.height = mapHeight;
@@ -94,7 +97,7 @@ export const renderWorldMap = ( world: EnvironmentDef ) => {
                 ctxIsometric.fillText(`${x}x${y}`, destX + TILE_WIDTH_HALF / 2, destY + TILE_HEIGHT_HALF / 2 );
             }
             ctx2D.fillStyle = tileColor;
-            ctx2D.fillRect( x, y, 1, 1 );
+            ctx2D.fillRect( x * CVS_2D_MAGNIFIER, y * CVS_2D_MAGNIFIER, CVS_2D_MAGNIFIER, CVS_2D_MAGNIFIER );
         }
     }
 }

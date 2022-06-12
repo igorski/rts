@@ -25,42 +25,38 @@
         ref="canvasContainer"
         class="world-renderer"
     ></div>
-    <div class="world-ui">
-        <div class="world-map">
-            <div
-                ref="mapContainer"
-                class="world-map"
-            ></div>
-            <div class="player-position" :style="{ left: `${world.x}px`, top: `${world.y}px` }"></div>
-        </div>
-    </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
 import { canvas } from "zcanvas";
 import { mapState, mapActions } from "pinia";
-import { useWorldStore } from "../../stores/world";
 import type { EnvironmentDef, TileDef } from "@/definitions/world-tiles";
 import { TILE_SIZE } from "@/definitions/world-tiles";
-import CACHE, { initCache } from "@/renderers/render-cache";
+import { initCache } from "@/renderers/render-cache";
 import { renderWorldMap } from "@/renderers/map-renderer";
-import WorldRenderer from "@/renderers/world-renderer";
+import GameRenderer from "@/renderers/game-renderer";
+import WorldMap from "@/components/world-map/world-map.vue";
+import { useGameStore } from "@/stores/game";
 
 const MIN_AMOUNT_OF_TILES = 5; // minimum amount of tiles visible on the dominant axis of the screen
-const renderer = new WorldRenderer();
+const renderer = new GameRenderer();
 let zCanvasInstance: canvas;
+let keyHandler: ( e: KeyboardEvent ) => void;
 let handlers: { event: string, callback: EventListenerOrEventListenerObject }[] = [];
 
 export default defineComponent({
+    components: {
+        WorldMap,
+    },
     computed: {
-        ...mapState( useWorldStore, [
+        ...mapState( useGameStore, [
             "world",
-            "playerX",
-            "playerY",
+            "cameraX",
+            "cameraY",
         ]),
     },
-    async mounted(): void {
+    async mounted(): Promise<void> {
         /**
          * Construct zCanvas instance to render the game world. The zCanvas
          * also maintains the game loop that will update the world prior to each render cycle.
@@ -76,7 +72,6 @@ export default defineComponent({
         });
 
         // render world map
-        console.warn( 'Render world' );
         await initCache();
         renderWorldMap( this.world );
 
@@ -95,10 +90,8 @@ export default defineComponent({
         this.handleResize();
 
         // keyboard control : todo put somewhere else
-        this.keyHandler = this.handleKeyDown.bind( this );
-        document.body.addEventListener( "keydown", this.keyHandler );
-
-        this.$refs.mapContainer.appendChild( CACHE.map.flat );
+        keyHandler = this.handleKeyDown.bind( this );
+        document.body.addEventListener( "keydown", keyHandler );
     },
     destroyed(): void {
         handlers.forEach(({ event, callback }) => {
@@ -106,12 +99,12 @@ export default defineComponent({
         });
         handlers.length = 0;
         zCanvasInstance.dispose();
-        document.body.removeEventListener( "keydown", this.keyHandler );
+        document.body.removeEventListener( "keydown", keyHandler );
     },
     methods: {
-        ...mapActions( useWorldStore, [
-            "setPlayerX",
-            "setPlayerY",
+        ...mapActions( useGameStore, [
+            "setCameraX",
+            "setCameraY",
         ]),
         handleResize(): void {
             const { clientWidth, clientHeight } = document.documentElement;
@@ -138,25 +131,24 @@ export default defineComponent({
 
         },
         handleKeyDown( e: KeyboardEvent ): void {
-            // TODO : useWorldStore() should be cached
             switch ( e.key ) {
                 default:
                     return;
                 case "ArrowLeft":
-                    this.setPlayerX( this.playerX( useWorldStore()) - 1 );
-                    this.setPlayerY( this.playerY( useWorldStore()) + 1 );
+                    this.setCameraX( this.cameraX - 1 );
+                    this.setCameraY( this.cameraY + 1 );
                     break;
                 case "ArrowRight":
-                    this.setPlayerX( this.playerX( useWorldStore()) + 1 );
-                    this.setPlayerY( this.playerY( useWorldStore()) - 1 );
+                    this.setCameraX( this.cameraX + 1 );
+                    this.setCameraY( this.cameraY - 1 );
                     break;
                 case "ArrowUp":
-                    this.setPlayerY( this.playerY( useWorldStore()) - 1 );
-                    this.setPlayerX( this.playerX( useWorldStore()) - 1 );
+                    this.setCameraY( this.cameraY - 1 );
+                    this.setCameraX( this.cameraX - 1 );
                     break;
                 case "ArrowDown":
-                    this.setPlayerY( this.playerY( useWorldStore()) + 1 );
-                    this.setPlayerX( this.playerX( useWorldStore()) + 1 );
+                    this.setCameraY( this.cameraY + 1 );
+                    this.setCameraX( this.cameraX + 1 );
                     break;
             }
             e.preventDefault();
@@ -164,22 +156,3 @@ export default defineComponent({
     }
 });
 </script>
-
-<style scoped>
-.world-ui {
-    position: fixed;
-    bottom: 16px;
-    left: 16px;
-}
-
-.world-map {
-    position: relative;
-}
-
-.player-position {
-    position: absolute;
-    background-color: red;
-    width: 1px;
-    height: 1px;
-}
-</style>

@@ -33,7 +33,8 @@ import CACHE from "./render-cache";
 const { TILES } = CACHE.sprites;
 const renderedMap = CACHE.map.isometric;
 
-export default class WorldRenderer extends sprite {
+export default class GameRenderer extends sprite {
+    // @ts-expect-error no initializer
     private world: EnvironmentDef;
     private terrain: TileDef[] = [];
     private mapCenterX: number = 0;
@@ -76,23 +77,17 @@ export default class WorldRenderer extends sprite {
         if ( process.env.NODE_ENV !== "production" ) {
             if ( event.type === "mousedown" ) {
                 const PointToCoord = ( x: number, y: number ): Point => {
-                    const tileHeight = TILE_SIZE;
+                    const tileHeight = TILE_SIZE * this.canvas._scale.y;
                     // int x = mX - camera.x;
                     // int y = mY - camera.y;
+                    x += (this.viewport.left + this.canvas.getWidth() / 2 );
+                    y += (this.viewport.top + this.canvas.getHeight() / 2 );
                     return {
                         x: Math.round((y + x / 2) / tileHeight ),
                         y: Math.round((y - x / 2) / tileHeight )
                     };
                 };
                 console.log("mouse clicked on tile " + JSON.stringify(PointToCoord( x, y )));
-
-                const tiles = [];
-                for ( let tx = this.viewport.left; tx < this.viewport.right; ++tx ) {
-                    for ( let ty = this.viewport.top; ty < this.viewport.bottom; ++ty ) {
-                        tiles.push( this.terrain[ coordinateToIndex( tx, ty, this.world as EnvironmentDef ) ]);
-                    }
-                }
-                console.log( "tiles in screen:" + JSON.stringify( tiles ));
             }
         }
         return true;
@@ -126,8 +121,8 @@ export default class WorldRenderer extends sprite {
 
         // TODO : can we roll this into a single loop ?
 
-        for ( let tx = this.viewport.left; tx < this.viewport.right; ++tx ) {
-           for ( let ty = this.viewport.top; ty < this.viewport.bottom; ++ty ) {
+        for ( let tx = this.viewport.left; tx < this.viewport.left + this.viewport.width; ++tx ) {
+           for ( let ty = this.viewport.top; ty < this.viewport.top + this.viewport.height; ++ty ) {
                 const { x, y, height, type } = this.world.terrain[ coordinateToIndex( tx, ty, this.world ) ];
                 let spriteX = 0;
                 switch ( type ) {
@@ -145,7 +140,7 @@ export default class WorldRenderer extends sprite {
                         break;
                 }
                 const hover = this.hoverPoint.x === x && this.hoverPoint.y === y;
-                ctx.globalCompositeOperation = hover ? "destination-our" : "source-over";
+                ctx.globalCompositeOperation = hover ? "destination-out" : "source-over";
 
                 ctx.save();
                 ctx.translate( this.mapCenterX, this.mapCenterY );

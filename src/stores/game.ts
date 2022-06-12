@@ -24,23 +24,33 @@ import { defineStore } from "pinia";
 import type { EnvironmentDef } from "@/definitions/world-tiles";
 import WorldFactory from "@/model/factories/world-factory";
 
-interface STATE {
+type GameState = {
     world: EnvironmentDef;
 }
 
-export const useWorldStore = defineStore<string, STATE>( "world", {
-    state: (): STATE => ({
+type GameGetters = {
+    cameraX: ( state: GameState ) => number;
+    cameraY: ( state: GameState ) => number;
+}
+
+type GameActions = {
+    setCameraX: ( value: number ) => void;
+    setCameraY: ( value: number ) => void;
+}
+
+export const useGameStore = defineStore<string, GameState, GameGetters, GameActions>( "world", {
+    state: (): GameState => ({
         world : WorldFactory.populate( WorldFactory.create())
     }),
     getters: {
-        playerX: number => ( state: STATE ) => state.world.x,
-        playerY: number => ( state: STATE ) => state.world.y,
+        cameraX: ( state: GameState ): number => state.world.x,
+        cameraY: ( state: GameState ): number => state.world.y,
     },
     actions: {
-        setPlayerX( value: number ): void {
+        setCameraX( value: number ): void {
             this.world.x = Math.max( 0, Math.min( this.world.width, value ));
         },
-        setPlayerY( value: number ): void {
+        setCameraY( value: number ): void {
             this.world.y = Math.max( 0, Math.min( this.world.height, value ));
         },
     }
