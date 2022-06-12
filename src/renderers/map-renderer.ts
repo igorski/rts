@@ -30,6 +30,7 @@ import CACHE from "./render-cache";
 const { TILES } = CACHE.sprites;
 
 export const CVS_2D_MAGNIFIER = 2;
+const DEBUG = process.env.NODE_ENV !== "production";
 
 /**
  * Renders given worlds tiled terrain into a pre-rendered HTMLCanvasElement
@@ -58,6 +59,9 @@ export const renderWorldMap = ( world: EnvironmentDef ) => {
     for ( let tx = 0; tx < world.width; ++tx ) {
         for ( let ty = 0; ty < world.height; ++ty ) {
             const { x, y, height, type } = world.terrain[ coordinateToIndex( tx, ty, world ) ];
+
+            // determine tile type
+
             let spriteX = 0;
             let tileColor = "#009900";
             switch ( type ) {
@@ -74,9 +78,11 @@ export const renderWorldMap = ( world: EnvironmentDef ) => {
                     break;
                 case TileTypes.MOUNTAIN:
                     spriteX = 128;
-                    tileColor = "#00FF99";
+                    tileColor = "#999900";
                     break;
             }
+
+            // render the tile
 
             for ( let i = 0; i < height; ++i ) {
                 const destX = halfWidth + ( horPosition( x, y ) - TILE_WIDTH_HALF );
@@ -92,9 +98,14 @@ export const renderWorldMap = ( world: EnvironmentDef ) => {
                     TILE_SIZE,
                     TILE_SIZE
                 );
-                // DEBUG
-                ctxIsometric.font = "10px Arial";
-                ctxIsometric.fillText(`${x}x${y}`, destX + TILE_WIDTH_HALF / 2, destY + TILE_HEIGHT_HALF / 2 );
+
+                // DEBUG - add coordinate text for 2D tile index and absolute pixel offset
+
+                if ( DEBUG ) {
+                    ctxIsometric.font = "10px Arial";
+                    ctxIsometric.fillText(`${x}:${y}`, destX + TILE_WIDTH_HALF / 2, destY + TILE_HEIGHT_HALF / 2 );
+                    ctxIsometric.fillText(`  ${destX}x${destY}`, destX + TILE_WIDTH_HALF / 2, destY + TILE_HEIGHT_HALF / 1.5 );
+                }
             }
             ctx2D.fillStyle = tileColor;
             ctx2D.fillRect( x * CVS_2D_MAGNIFIER, y * CVS_2D_MAGNIFIER, CVS_2D_MAGNIFIER, CVS_2D_MAGNIFIER );

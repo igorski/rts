@@ -21,17 +21,21 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 import { sprite } from "zcanvas";
-import type { Point, Rectangle } from "@/definitions/math";
+import { CameraActions } from "@/definitions/camera-actions";
+import type { Point, Rectangle, Box } from "@/definitions/math";
 import type { TileDef, EnvironmentDef } from "@/definitions/world-tiles";
 import {
     TileTypes, TILE_SIZE, TILE_WIDTH_HALF, TILE_HEIGHT_HALF,
     horPosition, verPosition, amountOfTilesInWidth, amountOfTilesInHeight
 } from "@/definitions/world-tiles";
 import { coordinateToIndex } from "@/utils/terrain-util";
+import DirectionBox from "@/model/math/direction-box";
 import CACHE from "./render-cache";
 
 const { TILES } = CACHE.sprites;
 const renderedMap = CACHE.map.isometric;
+
+const POINTER_HIT_AREA = 50;
 
 export default class GameRenderer extends sprite {
     // @ts-expect-error no initializer
@@ -40,18 +44,28 @@ export default class GameRenderer extends sprite {
     private mapCenterX: number = 0;
     private mapCenterY: number = 0;
     private hoverPoint: Point = { x: Infinity, y: Infinity };
+    private edges: Box = { left: 0, right: 0, top: 0, bottom: 0 };
+    private pointerActions: DirectionBox = new DirectionBox();
     private horizontalTileAmount: number = 0;
     private verticalTileAmount: number = 0;
+    private actualTileHeight: number = TILE_SIZE;
+    private scale: number = 1;
+    private interactionCallback: Function;
 
     // visible map area
     private viewport: Rectangle = { left: 0, top: 0, width: 0, height: 0 };
+
+    constructor( interactionCallback: Function ) {
+        super();
+        this.interactionCallback = interactionCallback;
+    }
 
     setWorld( world: EnvironmentDef ): void {
         this.world   = world;
         this.terrain = world.terrain;
     }
 
-    setTileDimensions( width: number, height: number ): void {
+    setWorldSize( width: number, height: number ): void {
         this.horizontalTileAmount = amountOfTilesInWidth( width )
         this.verticalTileAmount   = amountOfTilesInHeight( height );
 
@@ -66,48 +80,83 @@ export default class GameRenderer extends sprite {
 
         this.setWidth( width * x );
         this.setHeight( height * y );
+
+        this.viewport.width  = this.canvas.getWidth();
+        this.viewport.height = this.canvas.getHeight();
+        this.mapCenterX      = this.viewport.width  / 2;
+        this.mapCenterY      = this.viewport.height / 2;
+
+        this.actualTileHeight = this.viewport.height / this.verticalTileAmount;
+        this.scale = this.actualTileHeight / TILE_SIZE;
+
+        this.edges = {
+            left: POINTER_HIT_AREA,
+            right: this.getWidth() - POINTER_HIT_AREA,
+            top: POINTER_HIT_AREA,
+            bottom: this.getHeight() - POINTER_HIT_AREA
+        };
+        console.warn(this.edges);
     }
 
     handleInteraction( x: number, y: number, event: Event ): boolean {
-        // convert screen coordinates (relative to isometric space) to 2D map coordinates
+        switch ( event.type ) {
+            default:
+                break;
 
-        this.hoverPoint.x = Math.floor(( x / TILE_WIDTH_HALF + y / TILE_HEIGHT_HALF ) / 2 );
-        this.hoverPoint.y = Math.floor(( y / TILE_HEIGHT_HALF - ( x / TILE_WIDTH_HALF )) / 2 );
+            case "mousemove":
+                if ( x <= this.edges.left ) {
+                    this.pointerActions.setHorizontal( true );
+                } else if ( x >= this.edges.right ) {
+                    this.pointerActions.setHorizontal( false );
+                } else {
+                    this.pointerActions.resetHorizontal();
+                }
 
-        if ( process.env.NODE_ENV !== "production" ) {
-            if ( event.type === "mousedown" ) {
-                const PointToCoord = ( x: number, y: number ): Point => {
-                    const tileHeight = TILE_SIZE * this.canvas._scale.y;
-                    // int x = mX - camera.x;
-                    // int y = mY - camera.y;
-                    x += (this.viewport.left + this.canvas.getWidth() / 2 );
-                    y += (this.viewport.top + this.canvas.getHeight() / 2 );
-                    return {
-                        x: Math.round((y + x / 2) / tileHeight ),
-                        y: Math.round((y - x / 2) / tileHeight )
-                    };
-                };
-                console.log("mouse clicked on tile " + JSON.stringify(PointToCoord( x, y )));
-            }
+                if ( y <= this.edges.top ) {
+                    this.pointerActions.setVertical( true );
+                } else if ( y >= this.edges.bottom ) {
+                    this.pointerActions.setVertical( false );
+                } else {
+                    this.pointerActions.resetVertical();
+                }
+                break;
+
+            case "mousedown":
+            case "touchdown":
+                // mouse coordinates relative to absolute map position in isometric view
+                const absoluteX = x + this.viewport.left;
+                const absoluteY = y + this.viewport.top;
+
+                this.hoverPoint = this.tileForCoordinate( absoluteX, absoluteY );
+                // debug info, what is the range of visible tiles we can see ?
+                console.log(
+                    "top left:"+ JSON.stringify( this.tileForCoordinate( this.viewport.left, this.viewport.top )),
+                    "bottom right:"+ JSON.stringify( this.tileForCoordinate(
+                        Math.min( renderedMap.width + this.mapCenterX, this.viewport.left + this.viewport.width ),
+                        Math.min( renderedMap.height, this.viewport.top + this.viewport.height )
+                    )),
+                );
+                console.log("mouse coord at " + absoluteX + " x " + absoluteY + ", clicked on tile " + JSON.stringify( this.hoverPoint ) );
+                break;
         }
         return true;
     }
 
+    update(): void {
+        const action: CameraActions = this.pointerActions.toCameraAction();
+
+        if ( action !== CameraActions.IDLE ) {
+            this.interactionCallback({ type: "pan", action });
+        }
+    }
+
     draw( ctx: CanvasRenderingContext2D ): void {
-        ctx.beginPath();
-
-        // TODO : cache
-        this.mapCenterX = this.canvas.getWidth() / 2;
-        this.mapCenterY = this.canvas.getHeight() / 2;
-
-        // TODO : player position from cache ?
         const x = this.world.x;
         const y = this.world.y;
 
-        this.viewport.left   = Math.round((( renderedMap.width / 2 ) + horPosition( x, y )) - this.canvas.getWidth() / 2 );
-        this.viewport.top    = Math.round( verPosition( x, y ) - this.canvas.getHeight() / 2 );
-        this.viewport.width  = this.canvas.getWidth();
-        this.viewport.height = this.canvas.getHeight();
+        // TODO: calculate this on camera pan action update
+       this.viewport.left = Math.round((( renderedMap.width / 2 ) + horPosition( x, y )) - this.mapCenterX );
+       this.viewport.top  = Math.round( verPosition( x, y ) - this.mapCenterY );
 
         ctx.drawImage(
             renderedMap,
@@ -119,6 +168,7 @@ export default class GameRenderer extends sprite {
 
         if ( true )return
 
+        // TODO we need to know what the visible range of tiles is
         // TODO : can we roll this into a single loop ?
 
         for ( let tx = this.viewport.left; tx < this.viewport.left + this.viewport.width; ++tx ) {
@@ -161,5 +211,23 @@ export default class GameRenderer extends sprite {
                 ctx.restore();
             }
         }
+    }
+
+    /* internal methods */
+
+    private tileForCoordinate( x: number, y: number ): Point {
+        const out = { x: Infinity, y: Infinity };
+
+        // 2D coordinate of tile under mouse position
+        const tileX = Math.round((( y + x * 0.5 ) / this.actualTileHeight ) - ( this.world.width * 0.5 ));
+        const tileY = Math.round((( y - x * 0.5 ) / this.actualTileHeight ) + ( this.world.height * 0.5 ));
+
+        if ( tileX < 0 || tileX > this.world.width || tileY < 0 || tileY > this.world.height ) {
+            return out; // tile is out of world bounds
+        }
+        out.x = tileX;
+        out.y = tileY;
+
+        return out;
     }
 };

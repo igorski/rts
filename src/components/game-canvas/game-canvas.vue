@@ -32,15 +32,17 @@ import { defineComponent } from "vue";
 import { canvas } from "zcanvas";
 import { mapState, mapActions } from "pinia";
 import type { EnvironmentDef, TileDef } from "@/definitions/world-tiles";
+import { CameraActions } from "@/definitions/camera-actions";
 import { TILE_SIZE } from "@/definitions/world-tiles";
 import { initCache } from "@/renderers/render-cache";
 import { renderWorldMap } from "@/renderers/map-renderer";
 import GameRenderer from "@/renderers/game-renderer";
 import WorldMap from "@/components/world-map/world-map.vue";
 import { useGameStore } from "@/stores/game";
+import { useCameraStore } from "@/stores/camera";
 
 const MIN_AMOUNT_OF_TILES = 5; // minimum amount of tiles visible on the dominant axis of the screen
-const renderer = new GameRenderer();
+let renderer: GameRenderer;
 let zCanvasInstance: canvas;
 let keyHandler: ( e: KeyboardEvent ) => void;
 let handlers: { event: string, callback: EventListenerOrEventListenerObject }[] = [];
@@ -52,6 +54,8 @@ export default defineComponent({
     computed: {
         ...mapState( useGameStore, [
             "world",
+        ]),
+        ...mapState( useCameraStore, [
             "cameraX",
             "cameraY",
         ]),
@@ -66,10 +70,11 @@ export default defineComponent({
             height: window.innerHeight,
             animate: true,
             smoothing: true,
-            fps: 60,
+            fps: 5,
             onUpdate: this.updateGame.bind( this ),
             backgroundColor: "#0000FF"
         });
+        renderer = new GameRenderer( this.handleRendererInteractions.bind( this ));
 
         // render world map
         await initCache();
@@ -102,9 +107,8 @@ export default defineComponent({
         document.body.removeEventListener( "keydown", keyHandler );
     },
     methods: {
-        ...mapActions( useGameStore, [
-            "setCameraX",
-            "setCameraY",
+        ...mapActions( useCameraStore, [
+            "moveCamera",
         ]),
         handleResize(): void {
             const { clientWidth, clientHeight } = document.documentElement;
@@ -125,30 +129,36 @@ export default defineComponent({
             console.warn(clientWidth,clientHeight,tilesInWidth,tilesInHeight);
             zCanvasInstance.setDimensions( tilesInWidth, tilesInHeight );
             zCanvasInstance.scale( clientWidth / tilesInWidth, clientHeight / tilesInHeight );
-            renderer.setTileDimensions( tilesInWidth, tilesInHeight );
+            renderer.setWorldSize( tilesInWidth, tilesInHeight );
         },
-        updateGame(): void {
-
+        updateGame( timestamp: number ): void {
+            // TODO: into Pinia ?
+            renderer.update();
+        },
+        handleRendererInteractions({ type, action }: { type: string, action: never }): void {
+            switch ( type ) {
+                default:
+                    break;
+                case "pan":
+                    this.moveCamera( action as CameraActions );
+                    break;
+            }
         },
         handleKeyDown( e: KeyboardEvent ): void {
             switch ( e.key ) {
                 default:
                     return;
                 case "ArrowLeft":
-                    this.setCameraX( this.cameraX - 1 );
-                    this.setCameraY( this.cameraY + 1 );
+                    this.moveCamera( CameraActions.PAN_LEFT );
                     break;
                 case "ArrowRight":
-                    this.setCameraX( this.cameraX + 1 );
-                    this.setCameraY( this.cameraY - 1 );
+                    this.moveCamera( CameraActions.PAN_RIGHT );
                     break;
                 case "ArrowUp":
-                    this.setCameraY( this.cameraY - 1 );
-                    this.setCameraX( this.cameraX - 1 );
+                    this.moveCamera( CameraActions.PAN_UP );
                     break;
                 case "ArrowDown":
-                    this.setCameraY( this.cameraY + 1 );
-                    this.setCameraX( this.cameraX + 1 );
+                    this.moveCamera( CameraActions.PAN_DOWN );
                     break;
             }
             e.preventDefault();

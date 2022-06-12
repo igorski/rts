@@ -35,11 +35,11 @@ import { defineComponent } from "vue";
 import { mapState, mapActions } from "pinia";
 import { CVS_2D_MAGNIFIER } from "@/renderers/map-renderer";
 import CACHE from "@/renderers/render-cache";
-import { useGameStore } from "@/stores/game";
+import { useCameraStore } from "@/stores/camera";
 
 export default defineComponent({
     computed: {
-        ...mapState( useGameStore, [
+        ...mapState( useCameraStore, [
             "cameraX",
             "cameraY",
         ]),
@@ -72,6 +72,7 @@ export default defineComponent({
     &__camera-position {
         position: absolute;
         background-color: red;
+        border-color: 1px solid black;
         width: 2px;
         height: 2px;
     }

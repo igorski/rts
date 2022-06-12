@@ -20,30 +20,17 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-import { defineStore } from "pinia";
-import type { EnvironmentDef } from "@/definitions/world-tiles";
-import WorldFactory from "@/model/factories/world-factory";
 
-type GameState = {
-    world: EnvironmentDef;
-}
+// panning relative to isometric view
 
-type GameGetters = {
-
-}
-
-type GameActions = {
-
-}
-
-export const useGameStore = defineStore<string, GameState, GameGetters, GameActions>( "world", {
-    state: (): GameState => ({
-        world : WorldFactory.populate( WorldFactory.create())
-    }),
-    getters: {
-
-    },
-    actions: {
-
-    }
-});
+export enum CameraActions {
+    IDLE,
+    PAN_LEFT,
+    PAN_RIGHT,
+    PAN_UP,
+    PAN_DOWN,
+    PAN_LEFT_AND_UP,
+    PAN_RIGHT_AND_UP,
+    PAN_LEFT_AND_DOWN,
+    PAN_RIGHT_AND_DOWN
+};
