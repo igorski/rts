@@ -84,21 +84,15 @@ export const useCameraStore = defineStore<string, CameraState, CameraGetters, Ca
                     break;
                 case CameraActions.PAN_LEFT_AND_UP:
                     this.setCameraX( this.cameraX - 1 );
-                    this.setCameraY( this.cameraY - 2 );
                     break;
                 case CameraActions.PAN_LEFT_AND_DOWN:
-                    this.setCameraX( this.cameraX - 1 );
                     this.setCameraY( this.cameraY + 1 );
                     break;
                 case CameraActions.PAN_RIGHT_AND_UP:
-                    console.warn("right and up");
-                    this.setCameraX( this.cameraX + 1 );
-                    this.setCameraY( this.cameraY - 3 );
+                    this.setCameraY( this.cameraY - 1 );
                     break;
                 case CameraActions.PAN_RIGHT_AND_DOWN:
-                console.warn("right and down");
                     this.setCameraX( this.cameraX + 1 );
-                    this.setCameraY( this.cameraY + 2 );
                     break;
             }
         },

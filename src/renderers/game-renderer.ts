@@ -127,13 +127,12 @@ export default class GameRenderer extends sprite {
                 const absoluteX = x + this.viewport.left;
                 const absoluteY = y + this.viewport.top;
 
-                this.hoverTile = this.tileForCoordinate( absoluteX, absoluteY );
+                this.hoverTile = this.absoluteToTile( absoluteX, absoluteY );
                 // debug info, what is the range of visible tiles we can see ?
                 console.log(
-                    "top left:"+ JSON.stringify( this.tileForCoordinate( this.viewport.left, this.viewport.top )),
-                    "bottom right:"+ JSON.stringify( this.tileForCoordinate(
-                        Math.min( renderedMap.width + this.mapCenterX, this.viewport.left + this.viewport.width ),
-                        Math.min( renderedMap.height, this.viewport.top + this.viewport.height )
+                    "top left:"+ JSON.stringify( this.absoluteToTile( this.viewport.left, this.viewport.top )),
+                    "bottom right:"+ JSON.stringify( this.absoluteToTile(
+                        this.viewport.left + this.viewport.width, this.viewport.top + this.viewport.height
                     )),
                 );
                 console.log("mouse coord at " + absoluteX + " x " + absoluteY + ", clicked on tile " + JSON.stringify( this.hoverTile ) );
@@ -230,7 +229,7 @@ export default class GameRenderer extends sprite {
     /**
      * Retrieves a tile from an absolute, isometric render coordinate
      */
-    private tileForCoordinate( x: number, y: number ): Point {
+    private absoluteToTile( x: number, y: number ): Point {
         const out = { x: Infinity, y: Infinity };
 
         // 2D coordinate of tile under mouse position

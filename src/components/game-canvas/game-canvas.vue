@@ -70,7 +70,7 @@ export default defineComponent({
             height: window.innerHeight,
             animate: true,
             smoothing: true,
-            fps: 5, // QQQ 60
+            fps: 60,
             onUpdate: this.updateGame.bind( this ),
             backgroundColor: "#0000FF"
         });
