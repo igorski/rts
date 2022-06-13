@@ -24,7 +24,8 @@ import { loader } from "zcanvas";
 
 const ASSET_FOLDER: string = "./assets/sprites/";
 const ASSETS = {
-    TILES: "tiles.png"
+    CURSORS : "cursors.png",
+    TILES   : "tiles.png"
 };
 
 type Cache = {
@@ -39,7 +40,8 @@ type Cache = {
 
 const CACHE: Cache = {
     sprites: {
-        TILES: new Image()
+        CURSORS : new Image(),
+        TILES   : new Image(),
     },
     map: {
         flat: document.createElement( "canvas" ),

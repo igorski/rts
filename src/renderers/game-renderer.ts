@@ -32,7 +32,7 @@ import { coordinateToIndex } from "@/utils/terrain-util";
 import DirectionBox from "@/model/math/direction-box";
 import CACHE from "./render-cache";
 
-const { TILES } = CACHE.sprites;
+const { CURSORS, TILES } = CACHE.sprites;
 const renderedMap = CACHE.map.isometric;
 
 const POINTER_HIT_AREA = 50;
@@ -43,7 +43,7 @@ export default class GameRenderer extends sprite {
     private terrain: TileDef[] = [];
     private mapCenterX: number = 0;
     private mapCenterY: number = 0;
-    private hoverPoint: Point = { x: Infinity, y: Infinity };
+    private hoverTile: Point = { x: Infinity, y: Infinity };
     private edges: Box = { left: 0, right: 0, top: 0, bottom: 0 };
     private pointerActions: DirectionBox = new DirectionBox();
     private horizontalTileAmount: number = 0;
@@ -127,7 +127,7 @@ export default class GameRenderer extends sprite {
                 const absoluteX = x + this.viewport.left;
                 const absoluteY = y + this.viewport.top;
 
-                this.hoverPoint = this.tileForCoordinate( absoluteX, absoluteY );
+                this.hoverTile = this.tileForCoordinate( absoluteX, absoluteY );
                 // debug info, what is the range of visible tiles we can see ?
                 console.log(
                     "top left:"+ JSON.stringify( this.tileForCoordinate( this.viewport.left, this.viewport.top )),
@@ -136,7 +136,7 @@ export default class GameRenderer extends sprite {
                         Math.min( renderedMap.height, this.viewport.top + this.viewport.height )
                     )),
                 );
-                console.log("mouse coord at " + absoluteX + " x " + absoluteY + ", clicked on tile " + JSON.stringify( this.hoverPoint ) );
+                console.log("mouse coord at " + absoluteX + " x " + absoluteY + ", clicked on tile " + JSON.stringify( this.hoverTile ) );
                 break;
         }
         return true;
@@ -166,6 +166,18 @@ export default class GameRenderer extends sprite {
             this.viewport.width, this.viewport.height,
         );
 
+        // TODO check if in valid range (not Infinity)
+
+        if ( this.hoverTile.x !== Infinity ) {
+            const point = this.tileToLocal( this.hoverTile.x, this.hoverTile.y );
+            ctx.drawImage(
+                CURSORS,
+                0, 0, 128, 128,
+                point.x, point.y,
+                128, 128
+            );
+        }
+
         if ( true )return
 
         // TODO we need to know what the visible range of tiles is
@@ -189,7 +201,7 @@ export default class GameRenderer extends sprite {
                         spriteX = 128;
                         break;
                 }
-                const hover = this.hoverPoint.x === x && this.hoverPoint.y === y;
+                const hover = this.hoverTile.x === x && this.hoverTile.y === y;
                 ctx.globalCompositeOperation = hover ? "destination-out" : "source-over";
 
                 ctx.save();
@@ -215,6 +227,9 @@ export default class GameRenderer extends sprite {
 
     /* internal methods */
 
+    /**
+     * Retrieves a tile from an absolute, isometric render coordinate
+     */
     private tileForCoordinate( x: number, y: number ): Point {
         const out = { x: Infinity, y: Infinity };
 
@@ -229,5 +244,15 @@ export default class GameRenderer extends sprite {
         out.y = tileY;
 
         return out;
+    }
+
+    /**
+     * Converts a 2D world coordinate to a local on-screen isometric viewport coordinate
+     */
+    private tileToLocal( x: number, y: number ): Point {
+        return {
+            x: renderedMap.width * 0.5 + ( horPosition( x, y ) - TILE_WIDTH_HALF ) - this.viewport.left,
+            y: ( TILE_HEIGHT_HALF + ( verPosition( x, y ) - TILE_HEIGHT_HALF ) - this.viewport.top )// - ( i * TILE_HEIGHT_HALF ))
+        };
     }
 };
