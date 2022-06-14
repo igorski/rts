@@ -1,4 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
+const effectActionsMock = {
+    updateEffect: vi.fn()
+};
+vi.mock( "@/model/actions/effect-actions", () => effectActionsMock );
+
 import type { Store } from "pinia";
 import { setActivePinia, createPinia } from "pinia";
 import type { Effect } from "@/model/factories/effect-factory";
@@ -20,6 +26,10 @@ function fx({ action, callback, target }: FXProps ): Effect {
 describe( "Game Pinia store", () => {
     beforeEach(() => {
         setActivePinia( createPinia());
+    });
+
+    afterEach(() => {
+        vi.clearAllMocks();
     });
 
     describe( "actions", () => {
@@ -158,6 +168,76 @@ describe( "Game Pinia store", () => {
                     fx({ target: "bar", action: "barMut2" }),
                     fx({ target: "baz", action: "barMut" })
                 ]);
+            });
+        });
+
+        describe( "when updating the game properties", () => {
+            it( "should not do anything when the game state is not active", () => {
+                const now = Date.now();
+
+                const store = useGameStore();
+                store.gameState  = GameStates.GAME_OVER;
+                store.gameTime   = now - 1000;
+                store.lastRender = 500;
+
+                const spy1 = vi.spyOn( store, "advanceGameTime" );
+                const spy2 = vi.spyOn( store, "setLastRender" );
+
+                store.update( now );
+
+                expect( store.gameState ).toEqual( GameStates.GAME_OVER );
+
+                expect( spy1 ).not.toHaveBeenCalled();
+                expect( spy2 ).not.toHaveBeenCalled();
+            });
+
+            it( "should advance timer and render status when game state is active", () => {
+                const now = Date.now();
+
+                const store = useGameStore();
+                store.gameState  = GameStates.ACTIVE;
+                store.gameTime   = now - 1000;
+                store.lastRender = 500;
+
+                const spy1 = vi.spyOn( store, "advanceGameTime" );
+                const spy2 = vi.spyOn( store, "setLastRender" );
+
+                store.update( now );
+
+                expect( store.gameState ).toEqual( GameStates.ACTIVE );
+
+                expect( spy1 ).toHaveBeenCalledWith( now - 500 );
+                expect( spy2 ).toHaveBeenCalledWith( now );
+            });
+
+            it( "should be able to update the effects for an active game", () => {
+                const store = useGameStore();
+                const spy = vi.spyOn( store, "removeEffect" );
+
+                const effect1 = fx({ action: "action1" });
+                const effect2 = fx({ action: "action2" });
+
+                effectActionsMock.updateEffect.mockImplementation( effect => {
+                    // note that effect 2 we want to remove (by returning true)
+                    if ( JSON.stringify( effect ) === JSON.stringify( effect2 )) return true;
+                    return false;
+                });
+
+                const now = Date.now();
+
+                store.gameState  = GameStates.ACTIVE;
+                store.gameTime   = now - 1000;
+                store.lastRender = 500;
+                store.effects    = [ effect1, effect2 ];
+
+                store.update( now );
+
+                // assert Effects have been updated
+                expect( effectActionsMock.updateEffect ).toHaveBeenNthCalledWith( 1, effect1, store.gameTime );
+                expect( effectActionsMock.updateEffect ).toHaveBeenNthCalledWith( 2, effect2, store.gameTime );
+
+                // assert secondary effect has been requested to be removed (as its update returned true)
+                expect( spy ).toHaveBeenCalledWith( effect2 );
             });
         });
     });

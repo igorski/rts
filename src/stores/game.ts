@@ -30,7 +30,8 @@ export const GAME_STORE_NAME = "game";
 
 export enum GameStates {
     IDLE,
-    ACTIVE
+    ACTIVE,
+    GAME_OVER
 };
 
 type GameState = {
@@ -121,7 +122,7 @@ export const useGameStore = defineStore<string, GameState, GameGetters, GameActi
             const gameTimestamp = this.gameTime;
 
             // update the effects
-            this.effects.forEach(( effect: Effect ) => {
+            this.effects.forEach( effect => {
                 if ( updateEffect( effect, gameTimestamp )) {
                     this.removeEffect( effect );
                 }
