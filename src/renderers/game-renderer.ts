@@ -91,11 +91,10 @@ export default class GameRenderer extends sprite {
 
         this.edges = {
             left: POINTER_HIT_AREA,
-            right: this.getWidth() - POINTER_HIT_AREA,
+            right: this.viewport.width - POINTER_HIT_AREA,
             top: POINTER_HIT_AREA,
-            bottom: this.getHeight() - POINTER_HIT_AREA
+            bottom: this.viewport.height - POINTER_HIT_AREA
         };
-        console.warn(this.edges);
     }
 
     handleInteraction( x: number, y: number, event: Event ): boolean {
