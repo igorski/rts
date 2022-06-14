@@ -169,3 +169,9 @@ export default defineComponent({
     }
 });
 </script>
+
+<style lang="scss">
+.world-renderer canvas {
+    display: block;
+}
+</style>

@@ -38,18 +38,14 @@ import WorldMap from "./components/world-map/world-map.vue";
 body {
     margin: 0;
     padding: 0;
-    overflow: hidden;
-}
-
-#app {
     width: 100%;
+    height: 100%;
     overflow: hidden;
 }
 </style>
 
 <style lang="scss" scoped>
 .rts {
-    width: 100%;
     font-weight: normal;
 }
 
