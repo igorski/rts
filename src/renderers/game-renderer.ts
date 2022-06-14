@@ -124,8 +124,8 @@ export default class GameRenderer extends sprite {
             case "mousedown":
             case "touchdown":
                 // mouse coordinates relative to absolute map position in isometric view
-                const absoluteX = x + this.viewport.left;
-                const absoluteY = y + this.viewport.top;
+                const absoluteX = ( x + this.viewport.left );
+                const absoluteY = ( y + this.viewport.top ) - TILE_HEIGHT_HALF / 2;
 
                 this.hoverTile = this.absoluteToTile( absoluteX, absoluteY );
                 // debug info, what is the range of visible tiles we can see ?
