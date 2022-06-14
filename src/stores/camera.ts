@@ -26,6 +26,8 @@ import type { EnvironmentDef } from "@/definitions/world-tiles";
 import WorldFactory from "@/model/factories/world-factory";
 import { useGameStore } from "./game";
 
+export const CAMERA_STORE_NAME = "camera";
+
 type CameraState = {
 
 }
@@ -41,7 +43,7 @@ type CameraStoreActions = {
     moveCamera: ( direction: CameraActions ) => void;
 }
 
-export const useCameraStore = defineStore<string, CameraState, CameraGetters, CameraStoreActions>( "camera", {
+export const useCameraStore = defineStore<string, CameraState, CameraGetters, CameraStoreActions>( CAMERA_STORE_NAME, {
     state: (): CameraState => ({
 
     }),

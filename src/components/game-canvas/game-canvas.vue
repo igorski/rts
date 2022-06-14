@@ -107,6 +107,9 @@ export default defineComponent({
         document.body.removeEventListener( "keydown", keyHandler );
     },
     methods: {
+        ...mapActions( useGameStore, [
+            "update",
+        ]),
         ...mapActions( useCameraStore, [
             "moveCamera",
         ]),
@@ -132,7 +135,7 @@ export default defineComponent({
             renderer.setWorldSize( tilesInWidth, tilesInHeight );
         },
         updateGame( timestamp: number ): void {
-            // TODO: into Pinia ?
+            this.update( timestamp );
             renderer.update();
         },
         handleRendererInteractions({ type, action }: { type: string, action: never }): void {

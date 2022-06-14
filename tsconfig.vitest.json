@@ -1,5 +1,6 @@
 {
   "extends": "./tsconfig.app.json",
+  "include": ["tests/**/*.spec.ts"],
   "exclude": [],
   "compilerOptions": {
     "composite": true,
