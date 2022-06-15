@@ -24,7 +24,7 @@ import { defineStore } from "pinia";
 import type { EnvironmentDef } from "@/definitions/world-tiles";
 import { updateEffect } from "@/model/actions/effect-actions";
 import type { Effect } from "@/model/factories/effect-factory";
-import WorldFactory from "@/model/factories/world-factory";
+import GameFactory from "@/model/factories/game-factory";
 
 export const GAME_STORE_NAME = "game";
 
@@ -36,6 +36,7 @@ export enum GameStates {
 
 type GameState = {
     world: EnvironmentDef;
+    created: number,
     gameState: GameStates;
     lastRender: number;
     gameTime: number;
@@ -47,6 +48,7 @@ type GameGetters = {
 }
 
 type GameActions = {
+    init(): Promise<void>;
     setGameState( value: GameStates ): void;
     setGameTime( valueInMs: number ): void;
     advanceGameTime( valueInMs: number ): void;
@@ -62,7 +64,8 @@ type GameActions = {
 
 export const useGameStore = defineStore<string, GameState, GameGetters, GameActions>( GAME_STORE_NAME, {
     state: (): GameState => ({
-        world : WorldFactory.populate( WorldFactory.create()),
+        world : {} as EnvironmentDef,
+        created: 0,
         gameState : GameStates.ACTIVE,
         lastRender : 0,
         gameTime : 0,
@@ -72,6 +75,16 @@ export const useGameStore = defineStore<string, GameState, GameGetters, GameActi
 
     },
     actions: {
+        init(): Promise<void> {
+            // TODO load saved game, when existing
+            const game = GameFactory.create();
+
+            this.world   = game.world;
+            this.created = game.created;
+            this.effects = game.effects;
+
+            return Promise.resolve();
+        },
         setGameState( value: GameStates ): void {
             this.gameState = value;
         },

@@ -21,16 +21,27 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 <script setup lang="ts">
+import { ref } from "vue";
 import GameCanvas from "./components/game-canvas/game-canvas.vue";
 import WorldMap from "./components/world-map/world-map.vue";
+import { useGameStore } from "./stores/game";
+
+const loading = ref( true );
+
+useGameStore().init().then(() => {
+    loading.value = false;
+});
 </script>
 
 <template>
     <div class="rts">
-        <game-canvas />
-        <div class="game-ui">
-            <world-map />
-        </div>
+        <div v-if="loading">Loading...</div>
+        <template v-else>
+            <game-canvas />
+            <div class="game-ui">
+                <world-map />
+            </div>
+        </template>
     </div>
 </template>
 

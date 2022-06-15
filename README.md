@@ -10,19 +10,18 @@ All the game's actors and properties are Object structures inside Pinia store st
 these reactive.
 
 In order to create a new structure, a factory pattern is provided and every
-game structure has its own factory (see _./src/model/factories/_). You should never
+game structure has its own factory (see `/src/model/factories/`). You should never
 create your own Object structure but use a factory instead.
 
-Operations on structures are done using the action modules (see _./src/model/actions/_).
-A lot of structures specify their own getters as well as mutations (remember when changing values
-of a Pinia state object that these should be called from a store action).
+Operations on structures are done using the action modules (see `/src/model/actions/`) but remember
+when changing values of a Pinia state object, that these should be called from a store action.
 
 While the game clock could increment at a lower speed than in actual life (e.g. when paused), think of all
-time related operations (e.g. _Effects_) as if they were actual time (e.g. _"the effect of this item should last for fifteen minutes during gameplay"_). The unit used is the _millisecond_ and is automatically
-scaled to the game/real life ratio when creating a new Effect using the EffectFactory.
+time related operations (e.g. `Effects`) as if they were actual time (e.g. _"the effect of this item should last for fifteen minutes during gameplay"_). The unit used is the _millisecond_ and is automatically
+scaled to the game/real life ratio when creating a new Effect using the `EffectFactory`.
 
-All of the games behaviour and time bound effects update in the same place: the _update()_-handler
-in the _game_-store. This is bound to the render cycle of the game world (and deferred to animationFrame
+All of the games behaviour and time bound effects update in the same place: the `update()`-handler
+in the `game`-store. This is bound to the render cycle of the game world (and deferred to AnimationFrame
 so the game is effectively paused when the browser/tab isn't focused).
 
 ## Application source outline
@@ -48,7 +47,7 @@ Create a local development server with hot module reload:
 npm run dev
 ```
 
-Creating a production build (build output will reside in _./dist/_-folder):
+Creating a production build (build output will reside in `/dist/`-folder):
 
 ```
 npm run build

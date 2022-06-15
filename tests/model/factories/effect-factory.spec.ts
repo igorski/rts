@@ -34,7 +34,7 @@ describe( "Effect factory", () => {
         const from = 2000;
         const to = 5000;
         const effect = EffectFactory.create({ store, action, start, duration, from, to });
-        expect(effect.duration).toEqual(duration);
+        expect( effect.duration ).toEqual( duration );
     });
 
     it( "should be able to create a complex Effect structure", () => {
@@ -51,7 +51,7 @@ describe( "Effect factory", () => {
             { store, action, start, duration, from, to, callback, target }
         );
 
-        expect(effect).toEqual({
+        expect( effect ).toEqual({
             store,
             action,
             start,
@@ -64,7 +64,7 @@ describe( "Effect factory", () => {
         });
     });
 
-    it( "should be able to assemble and disassemble a serialized effect", () => {
+    it( "should be able to serialize and deserialize an Effect instance", () => {
         const store = "fooStore";
         const action = "someAction";
         const start = Date.now();
@@ -77,7 +77,7 @@ describe( "Effect factory", () => {
         const effect = EffectFactory.create(
             { store, action, start, duration, from, to, callback, target }
         );
-        const disassembled = EffectFactory.disassemble(effect);
-        expect(EffectFactory.assemble(disassembled)).toEqual(effect);
+        const serialized = EffectFactory.serialize( effect );
+        expect( EffectFactory.deserialize( serialized )).toEqual( effect );
     });
 });

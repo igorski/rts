@@ -1,3 +1,25 @@
+/**
+ * The MIT License (MIT)
+ *
+ * Igor Zinken 2022 - https://www.igorski.nl
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 import { Map } from "rot-js";
 
 import { TileTypes, type EnvironmentDef } from "@/definitions/world-tiles";
@@ -9,10 +31,19 @@ import {
 } from "@/utils/terrain-util";
 import { random, randomInRangeInt } from "@/utils/random-util";
 import TileFactory from "./tile-factory";
+import type { SerializedTile } from "./tile-factory";
 
 const DEBUG = process.env.NODE_ENV === "development";
 
 const MAX_WALKABLE_TILE = TileTypes.SAND;
+
+export type SerializedWorld = {
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    t: SerializedTile[]
+};
 
 const WorldFactory =
 {
@@ -59,22 +90,28 @@ const WorldFactory =
     /**
      * disassemble the world into a serialized JSON structure
      */
-    disassemble( world: EnvironmentDef ): object {
-        const out = {};
-
-        // TODO
-
-        return out;
+    serialize( world: EnvironmentDef ): SerializedWorld {
+        return {
+            x: world.x,
+            y: world.y,
+            w: world.width,
+            h: world.height,
+            t: world.terrain.map( TileFactory.serialize )
+        };
     },
 
     /**
      * assemble a serialized JSON Object
      * back into world structure
      */
-    assemble( data: object ): EnvironmentDef {
-        const world: EnvironmentDef = WorldFactory.create();
+    deserialize( data: SerializedWorld ): EnvironmentDef {
+        const world = WorldFactory.create();
 
-        // TODO
+        world.x = data.x;
+        world.y = data.y;
+        world.width = data.w;
+        world.height = data.h;
+        world.terrain = data.t.map( TileFactory.deserialize );
 
         return world;
     }
