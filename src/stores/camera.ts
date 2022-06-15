@@ -64,37 +64,37 @@ export const useCameraStore = defineStore<string, CameraState, CameraGetters, Ca
             const game = useGameStore();
             game.world.y = Math.max( 0, Math.min( game.world.height, value ));
         },
-        moveCamera( direction: CameraActions ): void {
+        moveCamera( direction: CameraActions, speed: number = 1 ): void {
             switch ( direction ) {
                 default:
                     break;
                 case CameraActions.PAN_LEFT:
-                    this.setCameraX( this.cameraX - 1 );
-                    this.setCameraY( this.cameraY + 1 );
+                    this.setCameraX( this.cameraX - speed );
+                    this.setCameraY( this.cameraY + speed );
                     break;
                 case CameraActions.PAN_RIGHT:
-                    this.setCameraX( this.cameraX + 1 );
-                    this.setCameraY( this.cameraY - 1 );
+                    this.setCameraX( this.cameraX + speed );
+                    this.setCameraY( this.cameraY - speed );
                     break;
                 case CameraActions.PAN_UP:
-                    this.setCameraY( this.cameraY - 1 );
-                    this.setCameraX( this.cameraX - 1 );
+                    this.setCameraY( this.cameraY - speed );
+                    this.setCameraX( this.cameraX - speed );
                     break;
                 case CameraActions.PAN_DOWN:
-                    this.setCameraY( this.cameraY + 1 );
-                    this.setCameraX( this.cameraX + 1 );
+                    this.setCameraY( this.cameraY + speed );
+                    this.setCameraX( this.cameraX + speed );
                     break;
                 case CameraActions.PAN_LEFT_AND_UP:
-                    this.setCameraX( this.cameraX - 1 );
+                    this.setCameraX( this.cameraX - speed );
                     break;
                 case CameraActions.PAN_LEFT_AND_DOWN:
-                    this.setCameraY( this.cameraY + 1 );
+                    this.setCameraY( this.cameraY + speed );
                     break;
                 case CameraActions.PAN_RIGHT_AND_UP:
-                    this.setCameraY( this.cameraY - 1 );
+                    this.setCameraY( this.cameraY - speed );
                     break;
                 case CameraActions.PAN_RIGHT_AND_DOWN:
-                    this.setCameraX( this.cameraX + 1 );
+                    this.setCameraX( this.cameraX + speed );
                     break;
             }
         },

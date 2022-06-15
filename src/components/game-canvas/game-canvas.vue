@@ -143,7 +143,7 @@ export default defineComponent({
                 default:
                     break;
                 case "pan":
-                    this.moveCamera( action as CameraActions );
+                    this.moveCamera( action as CameraActions, 1 / 60 );
                     break;
             }
         },
