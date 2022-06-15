@@ -1,0 +1,15 @@
+/* layout variables */
+
+$mobile-width: 685px; // the threshold below which we start to use the mobile view
+
+$menu-height: 64px;
+$menu-height-mobile: 58px;
+$menu-toggle-width: 50px;
+
+$spacing-xsmall: 4px;
+$spacing-small: 7px;
+$spacing-medium: 14px;
+$spacing-large: 28px;
+$spacing-xlarge: 56px;
+
+@import "_colors";

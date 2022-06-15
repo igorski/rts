@@ -22,10 +22,14 @@
  */
 <script setup lang="ts">
 import { ref } from "vue";
+import { storeToRefs } from "pinia";
+import DialogWindow from "./components/dialog-window/dialog-window.vue";
 import GameCanvas from "./components/game-canvas/game-canvas.vue";
 import WorldMap from "./components/world-map/world-map.vue";
 import { useGameStore } from "./stores/game";
+import { useSystemStore } from "./stores/system";
 
+const { dialog } = storeToRefs( useSystemStore() );
 const loading = ref( true );
 
 useGameStore().init().then(() => {
@@ -42,6 +46,14 @@ useGameStore().init().then(() => {
                 <world-map />
             </div>
         </template>
+        <dialog-window
+            v-if="dialog"
+            :type="dialog.type"
+            :title="dialog.title"
+            :message="dialog.message"
+            :confirm-handler="dialog.confirm"
+            :cancel-handler="dialog.cancel"
+        />
     </div>
 </template>
 

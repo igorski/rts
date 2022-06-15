@@ -98,7 +98,7 @@ export default defineComponent({
         keyHandler = this.handleKeyDown.bind( this );
         document.body.addEventListener( "keydown", keyHandler );
     },
-    destroyed(): void {
+    beforeUnmount(): void {
         handlers.forEach(({ event, callback }) => {
             window.removeEventListener( event, callback );
         });

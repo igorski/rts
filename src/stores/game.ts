@@ -41,11 +41,11 @@ type GameState = {
     lastRender: number;
     gameTime: number;
     effects: Effect[]
-}
+};
 
 type GameGetters = {
 
-}
+};
 
 type GameActions = {
     init(): Promise<void>;
@@ -60,7 +60,7 @@ type GameActions = {
     removeEffectsByTarget( target: any ): void;
     removeEffectsByTargetAndAction( target: any, actions?: string[] | string ): void;
     update( timestamp: number ): void;
-}
+};
 
 export const useGameStore = defineStore<string, GameState, GameGetters, GameActions>( GAME_STORE_NAME, {
     state: (): GameState => ({

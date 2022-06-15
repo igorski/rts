@@ -1,0 +1,36 @@
+@import "_variables";
+@import "_mixins";
+
+/* mixins */
+
+@mixin window {
+    @include boxSize();
+    background-color: $color-1;
+    padding: $spacing-medium;
+    vertical-align: top;
+    color: #000;
+
+    h1 {
+        color: $color-text-header;
+        font-weight: bold;
+        margin-top: 0;
+    }
+}
+
+@mixin border() {
+    border: 3px solid $color-2;
+    border-top-width: 4px;
+}
+
+@mixin overlay {
+    // mobile first, override in custom inheriting classes
+    // what the desktop / tablet views should look like
+
+    position: fixed;
+    background-color: $color-5;
+    z-index: 500;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}

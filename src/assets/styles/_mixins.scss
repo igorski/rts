@@ -1,0 +1,85 @@
+/* mixins */
+
+@mixin mobile {
+    @media (max-width: #{$mobile-width}) {
+        @content;
+    }
+}
+
+@mixin large {
+    @media (min-width: #{$mobile-width}) {
+        @content;
+    }
+}
+
+@mixin portrait {
+    @media (orientation: portrait) {
+        @content;
+    }
+}
+
+@mixin center( $position: absolute ) {
+    position: $position;
+    top: 50%;
+    left: 50%;
+    -webkit-transform: translate(-50%,-50%);
+       -moz-transform:translate(-50%,-50%);
+        -ms-transform: translate(-50%,-50%);
+           transform: translate(-50%, -50%);
+}
+
+@mixin noSelect {
+    -webkit-touch-callout: none;
+      -webkit-user-select: none;
+       -khtml-user-select: none;
+         -moz-user-select: none;
+          -ms-user-select: none;
+              user-select: none;
+}
+
+@mixin noEvents {
+    pointer-events: none;
+}
+
+@mixin boxSize {
+    -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+       -moz-box-sizing: border-box; /* Firefox, other Gecko */
+            box-sizing: border-box;
+}
+
+@mixin textOverflow {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@mixin flex {
+    display: -webkit-flex;
+    display: flex;
+}
+
+@mixin inlineFlex {
+    display: -webkit-inline-flex;
+    display: inline-flex;
+}
+
+@mixin flexCenter() {
+    @include flex();
+    align-items: center;
+    justify-content: center;
+}
+
+@mixin flexColumns() {
+    @include flex();
+    align-content: space-between;
+}
+
+@mixin animate($property: all, $delay: .5s) {
+    transition: $property $delay cubic-bezier(0.455, 0.030, 0.515, 0.955);
+}
+
+@mixin scrollableWindow() {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+}

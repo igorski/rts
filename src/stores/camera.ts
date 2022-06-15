@@ -30,18 +30,18 @@ export const CAMERA_STORE_NAME = "camera";
 
 type CameraState = {
 
-}
+};
 
 type CameraGetters = {
     cameraX: () => number;
     cameraY: () => number;
-}
+};
 
 type CameraStoreActions = {
     setCameraX: ( value: number ) => void;
     setCameraY: ( value: number ) => void;
     moveCamera: ( direction: CameraActions ) => void;
-}
+};
 
 export const useCameraStore = defineStore<string, CameraState, CameraGetters, CameraStoreActions>( CAMERA_STORE_NAME, {
     state: (): CameraState => ({
