@@ -20,37 +20,13 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-export type Player = {
-    name: string;
-    credits: number;
+export enum ActorType {
+    BUILDING,
+    UNIT
 };
 
-export type SerializedPlayer = {
-    n: string;
-    c: number;
+export enum Building {
+    REFINERY,
+    BARRACKS,
+    TURRET
 };
-
-const PlayerFactory =
-{
-    create( name: string = "Player" ): Player {
-        return {
-            name,
-            credits: 500
-        };
-    },
-
-    serialize( player: Player ): SerializedPlayer {
-        return {
-            n: player.name,
-            c: player.credits,
-        };
-    },
-
-    deserialize( data: SerializedPlayer ): Player {
-        const player = PlayerFactory.create( data.n );
-        player.credits = data.c;
-
-        return player;
-    },
-};
-export default PlayerFactory;
