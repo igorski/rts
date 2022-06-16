@@ -7,9 +7,11 @@ const storeModernMock = {
     remove: vi.fn(() => "storeModernMockRemove" )
 };
 vi.mock( "store/dist/store.modern", () => ({ default: storeModernMock }));
+const SERIALIZED_GAME = "serializedGame";
+const DESERIALIZED_GAME = { player: "foo" }; // just a mock structure for test
 const gameFactoryMock = {
-    serialize: vi.fn(() => "serializedGame" ),
-    deserialize: vi.fn(() => "deserializedGame" )
+    serialize: vi.fn(() => SERIALIZED_GAME ),
+    deserialize: vi.fn(() => DESERIALIZED_GAME )
 };
 vi.mock( "@/model/factories/game-factory", () => ({ default: gameFactoryMock }));
 const gameStoreMock = {
@@ -21,6 +23,14 @@ const gameStoreMock = {
 };
 vi.mock( "@/stores/game", () => ({
     useGameStore: () => gameStoreMock
+}));
+const playerStoreMock = {
+    credits: 100,
+    name: "Jane Doe",
+    setPlayer: vi.fn(),
+};
+vi.mock( "@/stores/player", () => ({
+    usePlayerStore: () => playerStoreMock
 }));
 
 import type { Store } from "pinia";
@@ -42,7 +52,7 @@ describe( "Storage Pinia store", () => {
         await store.saveGame();
 
         expect( gameFactoryMock.serialize ).toHaveBeenCalledWith({ created: expect.any( Number ), world: expect.any( Object ), effects: expect.any( Array )} );
-        expect( storeModernMock.set ).toHaveBeenCalledWith( "rtsGame", "serializedGame" );
+        expect( storeModernMock.set ).toHaveBeenCalledWith( "rtsGame", SERIALIZED_GAME );
     });
 
     it( "should be able to restore a saved game from local storage", async () => {
@@ -53,7 +63,8 @@ describe( "Storage Pinia store", () => {
         expect( success ).toBe( true );
         expect( storeModernMock.get ).toHaveBeenCalledWith(  "rtsGame" );
         expect( gameFactoryMock.deserialize ).toHaveBeenCalledWith( "storeModernMockGet" );
-        expect( gameStoreMock.setGame ).toHaveBeenCalledWith( "deserializedGame" );
+        expect( gameStoreMock.setGame ).toHaveBeenCalledWith( DESERIALIZED_GAME );
+        expect( playerStoreMock.setPlayer ).toHaveBeenCalledWith( DESERIALIZED_GAME.player );
         expect( gameStoreMock.setLastRender ).toHaveBeenCalledWith( expect.any( Number ));
     });
 

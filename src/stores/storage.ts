@@ -25,6 +25,7 @@ import { defineStore } from "pinia";
 import storage from "store/dist/store.modern";
 import GameFactory from "@/model/factories/game-factory";
 import { useGameStore } from "./game";
+import { usePlayerStore } from "./player";
 
 export const STORAGE_STORE_NAME = "storage";
 const STORAGE_KEY = "rtsGame";
@@ -56,11 +57,16 @@ export const useStorageStore = defineStore<string, StorageState, StorageGetters,
                 const data = storage.get( STORAGE_KEY );
                 try {
                     const game = GameFactory.deserialize( data );
-                    const store = useGameStore();
-                    store.setGame( game! );
-                    store.setLastRender( window.performance.now() );
+
+                    const gameStore = useGameStore();
+                    gameStore.setGame( game! );
+                    gameStore.setLastRender( window.performance.now() );
+
+                    const playerStore = usePlayerStore();
+                    playerStore.setPlayer( game!.player );
                 } catch {
                     // likely corrupted or really outdated format
+                    this.resetGame();
                     resolve( false );
                 }
                 resolve( true );
@@ -68,9 +74,12 @@ export const useStorageStore = defineStore<string, StorageState, StorageGetters,
         },
         async saveGame(): Promise<void> {
             const gameStore = useGameStore();
+            const playerStore = usePlayerStore();
+
             const data = GameFactory.serialize({
                 created: gameStore.created,
                 world: gameStore.world,
+                player: playerStore.player,
                 effects: gameStore.effects
             });
             storage.set( STORAGE_KEY, data );

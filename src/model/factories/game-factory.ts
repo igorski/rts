@@ -23,18 +23,21 @@
 import LZString from "lz-string";
 import type { EnvironmentDef } from "@/definitions/world-tiles";
 import EffectFactory, { type Effect, type SerializedEffect } from "./effect-factory";
+import PlayerFactory, { type Player, type SerializedPlayer } from "./player-factory";
 import WorldFactory, { type SerializedWorld } from "./world-factory";
 
 export type Game = {
-    created: number,
-    world: EnvironmentDef,
-    effects: Effect[]
+    created: number;
+    world: EnvironmentDef;
+    player: Player;
+    effects: Effect[];
 };
 
 type SerializedGame = {
-    c: number,
-    w: SerializedWorld,
-    e: SerializedEffect[],
+    c: number;
+    p: SerializedPlayer;
+    w: SerializedWorld;
+    e: SerializedEffect[];
 };
 
 const GameFactory =
@@ -44,14 +47,16 @@ const GameFactory =
         return {
             created: now,
             world: world || WorldFactory.populate( WorldFactory.create()),
+            player: PlayerFactory.create(),
             effects: [],
         };
     },
 
     serialize( game: Game ): string {
-        const out = {
+        const out: SerializedGame = {
             c: game.created,
             w: WorldFactory.serialize( game.world ),
+            p: PlayerFactory.serialize( game.player ),
             e: game.effects.map( EffectFactory.serialize ),
         };
         const json = JSON.stringify( out );
@@ -80,6 +85,7 @@ const GameFactory =
 
         const game   = GameFactory.create( WorldFactory.deserialize( data.w ));
         game.created = data.c;
+        game.player  = PlayerFactory.deserialize( data.p );
         game.effects = data.e.map( EffectFactory.deserialize );
 
         return game;
