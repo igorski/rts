@@ -25,20 +25,32 @@ import { ref } from "vue";
 import { storeToRefs } from "pinia";
 import DialogWindow from "./components/dialog-window/dialog-window.vue";
 import GameCanvas from "./components/game-canvas/game-canvas.vue";
+import HeaderMenu from "./components/header-menu/header-menu.vue";
 import WorldMap from "./components/world-map/world-map.vue";
 import { useGameStore } from "./stores/game";
+import { useStorageStore } from "./stores/storage";
 import { useSystemStore } from "./stores/system";
 
+const storageStore = useStorageStore();
+
+const { hasSavedGame } = storeToRefs( storageStore );
 const { dialog } = storeToRefs( useSystemStore() );
 const loading = ref( true );
 
-useGameStore().init().then(() => {
-    loading.value = false;
-});
+if ( hasSavedGame.value ) {
+    storageStore.loadGame().then(() => {
+        loading.value = false;
+    });
+} else {
+    useGameStore().init().then(() => {
+        loading.value = false;
+    });
+}
 </script>
 
 <template>
     <div class="rts">
+        <header-menu />
         <div v-if="loading">Loading...</div>
         <template v-else>
             <game-canvas />
