@@ -27,32 +27,35 @@
     >
         <nav class="menu">
             <div class="menu__toggle"
-                 @click="toggleMenu"
+                 @click="toggleMenu()"
              >
                 <span>&#9776;</span>
             </div>
             <ul class="menu__items">
                 <li>
                     <button
+                        v-t="'file'"
                         type="button"
                         class="submenu__toggle" title="file"
-                    >File</button>
+                    ></button>
                     <ul class="menu__items__sub">
                         <li>
                             <button
+                                v-t="'saveGame'"
                                 type="button"
                                 :disabled="!hasActiveGame || isGameOver"
                                 title="Save game"
-                                @click="handleSave"
-                            >Save game</button>
+                                @click="handleSave()"
+                            ></button>
                         </li>
                         <li>
                             <button
+                                v-t="'resetGame'"
                                 type="button"
                                 title="Reset game"
                                 :disabled="!hasActiveGame"
-                                @click="handleReset"
-                            >Reset game</button>
+                                @click="handleReset()"
+                            ></button>
                         </li>
                     </ul>
                 </li>
@@ -67,8 +70,10 @@ import { mapState, mapActions } from "pinia";
 import { GameStates, useGameStore } from "@/stores/game";
 import { useStorageStore } from "@/stores/storage";
 import { useSystemStore } from "@/stores/system";
+import messages from "./messages.json";
 
 export default defineComponent ({
+    i18n: { messages },
     data: () => ({
         menuOpened: false,
     }),
@@ -103,16 +108,16 @@ export default defineComponent ({
         async handleSave(): Promise<void> {
             try {
                 await this.saveGame();
-                this.showNotification( "Game saved successfully" );
+                this.showNotification( this.$t( "saveSuccess" ));
             } catch {
-                this.showError( "An unknown error has occurred" );
+                this.showError( this.$t( "unknownError" ));
             }
         },
         handleReset(): void {
             this.openDialog({
                 type: "confirm",
-                title: "Are you sure?",
-                message: "Resetting your game means you will start a new game, losing all of your current achievements and progress. This cannot be undone!",
+                title: this.$t( "areYouSure" ),
+                message: this.$t( "resetExpl" ),
                 confirm: () => {
                     this.resetGame();
                 }

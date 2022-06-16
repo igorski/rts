@@ -29,18 +29,20 @@
             :class="{ multiple: isConfirm }"
         >
             <button
+                v-t="'ok'"
                 ref="confirmButton"
                 type="button"
                 class="rpg-button"
                 @click="handleConfirm()"
-            >OK</button>
+            ></button>
             <button
                 v-if="isConfirm"
+                v-t="'cancel'"
                 ref="cancelButton"
                 type="button"
                 class="rpg-button"
                 @click="handleCancel()"
-            >Cancel</button>
+            ></button>
         </div>
     </div>
 </template>
@@ -49,8 +51,10 @@
 import { defineComponent } from "vue";
 import { mapActions } from "pinia";
 import { useSystemStore } from "@/stores/system";
+import messages from "./messages.json";
 
 export default defineComponent({
+    i18n: { messages },
     props: {
         title: {
             type: String,
