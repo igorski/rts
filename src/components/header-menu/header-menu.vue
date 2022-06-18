@@ -61,6 +61,9 @@
                 </li>
             </ul>
         </nav>
+        <div class="credits">
+            {{ credits }} <span v-t="'credits'"></span>
+        </div>
     </header>
 </template>
 
@@ -68,8 +71,10 @@
 import { defineComponent } from "vue";
 import { mapState, mapActions } from "pinia";
 import { GameStates, useGameStore } from "@/stores/game";
+import { usePlayerStore } from "@/stores/player";
 import { useStorageStore } from "@/stores/storage";
 import { useSystemStore } from "@/stores/system";
+
 import messages from "./messages.json";
 
 export default defineComponent ({
@@ -82,6 +87,9 @@ export default defineComponent ({
             "created",
             "world",
             "gameState",
+        ]),
+        ...mapState( usePlayerStore, [
+            "credits",
         ]),
         hasActiveGame(): boolean {
             return this.created > 0 && !this.isGameOver; // e.g. creating new character/restart
@@ -136,6 +144,9 @@ export default defineComponent ({
     left: 0;
     top: 0;
     z-index: $z-index-header;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
     background-color: $color-background;
     width: 100%;
     padding: 0;
@@ -297,5 +308,10 @@ export default defineComponent ({
             display: none; // all are expanded in mobile view
         }
     }
+}
+
+.credits {
+    width: 100px;
+    margin-right: $spacing-medium;
 }
 </style>

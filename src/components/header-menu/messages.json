@@ -3,6 +3,7 @@
         "file": "File",
         "saveGame": "Save game",
         "resetGame": "Reset game",
+        "credits": "Credits",
         "areYouSure": "Are you sure?",
         "resetExpl": "Resetting your game means you will start a new game, losing all of your current achievements and progress. This cannot be undone!",
         "unknownError": "An unknown error has occurred",
