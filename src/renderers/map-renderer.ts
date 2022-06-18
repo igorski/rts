@@ -30,7 +30,7 @@ import CACHE from "./render-cache";
 const { TILES } = CACHE.sprites;
 
 export const CVS_2D_MAGNIFIER = 2;
-const DEBUG = process.env.NODE_ENV !== "production";
+const DEBUG = false;//process.env.NODE_ENV !== "production";
 
 /**
  * Renders given worlds tiled terrain into a pre-rendered HTMLCanvasElement

@@ -144,7 +144,7 @@ export default class GameRenderer extends sprite {
                         this.viewport.left + this.viewport.width, this.viewport.top + this.viewport.height
                     )),
                 );
-                console.log("mouse coord at " + absoluteX + " x " + absoluteY + ", clicked on tile " + JSON.stringify( this.hoverTile ) );
+                console.log("mouse coord at " + absoluteX + " x " + absoluteY + ", clicked on tile " + JSON.stringify( this.hoverTile ) + " of type " + this.world.terrain.find( tile => tile.x === this.hoverTile.x && tile.y === this.hoverTile.y )?.type );
                 break;
         }
         return true;

@@ -33,7 +33,7 @@ const DEFAULT_WALK_SPEED = 400; // ms per single step
 
 type ActorAction = {
     value: number;
-    target: { id: string, property: string };
+    target: string;
 };
 
 type ActionState = {
@@ -47,7 +47,8 @@ type ActionGetters = {
 type ActionActions = {
     setSelection( actors: Actor[] ): void;
     assignTarget( targetX: number, targetY: number ): void;
-    setActorProperty( action: ActorAction ): void;
+    setActorX( action: ActorAction ): void;
+    setActorY( action: ActorAction ): void;
 };
 
 let actor: Actor;
@@ -70,6 +71,9 @@ export const useActionStore = defineStore<string, ActionState, ActionGetters, Ac
             targetY = Math.round( targetY );
 
             this.selectedActors.forEach(( actor: Actor ) => {
+                // first cancel existing Actor Effects for the actions we are about to enqueue
+                gameStore.removeEffectsByTargetAndAction( actor.id, [ "setActorX", "setActorY" ]);
+
                 const maxTile = TileTypes.ROAD; // TODO determine per actor type
 
                 let startTime = gameStore.gameTime;
@@ -90,7 +94,7 @@ export const useActionStore = defineStore<string, ActionState, ActionGetters, Ac
                     if ( x !== lastX ) {
                         effect = EffectFactory.create({
                             store: ACTION_STORE_NAME, start: startTime, duration,
-                            from: lastX, to: x, action: "setActorProperty", target: { id: actor.id, property: "x" }
+                            from: lastX, to: x, action: "setActorX", target: actor.id
                         });
                         gameStore.addEffect( effect );
                         lastX = x;
@@ -98,7 +102,7 @@ export const useActionStore = defineStore<string, ActionState, ActionGetters, Ac
                     if ( y !== lastY ) {
                         effect = EffectFactory.create({
                             store: ACTION_STORE_NAME, start: startTime, duration,
-                            from: lastY, to: y, action: "setActorProperty", target: { id: actor.id, property: "y" }
+                            from: lastY, to: y, action: "setActorY", target: actor.id
                         });
                         gameStore.addEffect( effect );
                         lastY = y;
@@ -109,12 +113,18 @@ export const useActionStore = defineStore<string, ActionState, ActionGetters, Ac
                 });
             });
         },
-        setActorProperty( action: ActorAction ): void {
-            const compareId = action.target.id;
+        setActorX( action: ActorAction ): void {
+            const compareId = action.target;
             actor = useGameStore().actors.find(({ id }) => id === compareId ) as Actor;
             if ( actor ) {
-                // @ts-expect-error using string name to access property
-                actor[ action.target.property ] = action.value;
+                actor.x = action.value;
+            }
+        },
+        setActorY( action: ActorAction ): void {
+            const compareId = action.target;
+            actor = useGameStore().actors.find(({ id }) => id === compareId ) as Actor;
+            if ( actor ) {
+                actor.y = action.value;
             }
         },
     }
