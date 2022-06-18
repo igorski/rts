@@ -26,6 +26,7 @@ import { storeToRefs } from "pinia";
 import DialogWindow from "./components/dialog-window/dialog-window.vue";
 import GameCanvas from "./components/game-canvas/game-canvas.vue";
 import HeaderMenu from "./components/header-menu/header-menu.vue";
+import Notifications from "./components/notifications/notifications.vue";
 import WorldMap from "./components/world-map/world-map.vue";
 import { useGameStore } from "./stores/game";
 import { useStorageStore } from "./stores/storage";
@@ -58,6 +59,7 @@ if ( hasSavedGame.value ) {
                 <world-map />
             </div>
         </template>
+        <notifications />
         <dialog-window
             v-if="dialog"
             :type="dialog.type"
