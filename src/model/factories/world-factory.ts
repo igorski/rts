@@ -22,8 +22,9 @@
  */
 import { Map } from "rot-js";
 
-import { TileTypes, type EnvironmentDef } from "@/definitions/world-tiles";
-//import { reserveObject, checkIfFree } from "@/utils/map-util";
+import { Owner } from "@/definitions/actors";
+import { TileTypes, type EnvironmentDef, type TileDef, type BaseDef } from "@/definitions/world-tiles";
+import { checkIfFree } from "@/utils/map-util";
 import { findPath } from "@/utils/path-finder";
 import {
     growTerrain, getSurroundingIndices, getSurroundingTiles,
@@ -33,16 +34,27 @@ import { random, randomInRangeInt } from "@/utils/random-util";
 import TileFactory from "./tile-factory";
 import type { SerializedTile } from "./tile-factory";
 
-const DEBUG = process.env.NODE_ENV === "development";
-
 const MAX_WALKABLE_TILE = TileTypes.SAND;
 
 export type SerializedWorld = {
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    t: SerializedTile[]
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    t: SerializedTile[];
+    b: SerializedBase[];
+};
+
+type SerializedBase = {
+    o: number;
+    l: number;
+    t: number;
+    r: number;
+    b: number;
+    w: number;
+    h: number;
+    cx: number;
+    cy: number;
 };
 
 const WorldFactory =
@@ -58,6 +70,7 @@ const WorldFactory =
             width: size,
             height: size,
             terrain: [],
+            bases: [],
         };
         return world;
     },
@@ -79,10 +92,12 @@ const WorldFactory =
 
         generateTerrain( world );
 
-        // center player within world
+        // center player within their base
 
-        world.x = centerX;
-        world.y = centerY;
+        const base = world.bases.find(({ owner }) => owner === Owner.PLAYER )!;
+
+        world.x = base.centerX;
+        world.y = base.centerY;
 
         return world;
     },
@@ -96,7 +111,18 @@ const WorldFactory =
             y: world.y,
             w: world.width,
             h: world.height,
-            t: world.terrain.map( TileFactory.serialize )
+            t: world.terrain.map( TileFactory.serialize ),
+            b: world.bases.map( base => ({
+                o: base.owner,
+                l: base.left,
+                t: base.top,
+                r: base.right,
+                b: base.bottom,
+                w: base.width,
+                h: base.height,
+                cx: base.centerX,
+                cy: base.centerY,
+            }))
         };
     },
 
@@ -112,7 +138,17 @@ const WorldFactory =
         world.width = data.w;
         world.height = data.h;
         world.terrain = data.t.map( TileFactory.deserialize );
-
+        world.bases = data.b.map( b => ({
+            owner: b.o,
+            left: b.l,
+            top: b.t,
+            right: b.r,
+            bottom: b.b,
+            width: b.w,
+            height: b.h,
+            centerX: b.cx,
+            centerY: b.cy,
+        }));
         return world;
     }
 };
@@ -124,7 +160,7 @@ export default WorldFactory;
  * generate the terrain for the given world
  * blatantly stolen from code by Igor Kogan (okay, he kindly donated it)
  */
-function generateTerrain( world: EnvironmentDef ) {
+function generateTerrain( world: EnvironmentDef ): void {
     const { width, height } = world;
 
     // first create the GROUND
@@ -189,6 +225,10 @@ function generateTerrain( world: EnvironmentDef ) {
         }
     }
 
+    // generate bases
+
+    world.bases = generateBases( world );
+
     // now clean up possible weirdness
 
     for ( x = 0, y = 0; y < height; x = ( ++x === width ? ( x % width + ( ++y & 0 )) : x )) {
@@ -213,7 +253,7 @@ function generateTerrain( world: EnvironmentDef ) {
 /**
  * Generate roads
  */
-function digRoads( worldWidth: number, worldHeight: number ) {
+function digRoads( worldWidth: number, worldHeight: number ): TileDef[] {
     const minRoadWidth  = Math.min( Math.round( random() ) + 2, worldWidth );
     const minRoadHeight = Math.min( Math.round( random() ) + 2, worldHeight );
     let maxRoadWidth    = Math.min( Math.round( random() ) + 2, worldWidth  );
@@ -254,7 +294,7 @@ function digRoads( worldWidth: number, worldHeight: number ) {
 
     // convert two dimensional array to one dimensional terrain map
 
-    const terrain = [];
+    const terrain: TileDef[] = [];
 
     for ( let x = 0; x < xl; ++x ) {
         for ( let y = 0; y < yl; ++y ) {
@@ -264,4 +304,78 @@ function digRoads( worldWidth: number, worldHeight: number ) {
         }
     }
     return terrain;
+}
+
+function generateBases( world: EnvironmentDef, amountOfBases: number = 2 ): BaseDef[] {
+    const { terrain } = world;
+    const centerX = Math.round( world.width  / 2 );
+    const centerY = Math.round( world.height / 2 );
+    const bases: BaseDef[] = [];
+
+    const minBaseWidth  = 10;
+    const minBaseHeight = 5;
+    const maxBaseWidth  = Math.floor( world.width  / 5 );
+    const maxBaseHeight = Math.floor( world.height / 5 );
+
+    const generateBase = ( zoneCenterX: number, zoneCenterY: number, zoneWidth: number, zoneHeight: number, owner: Owner = Owner.PLAYER): BaseDef => {
+        const x = Math.round( zoneCenterX - ( zoneWidth  / 2 ));
+        const y = Math.round( zoneCenterY - ( zoneHeight / 2 ));
+        return {
+            left    : x,
+            top     : y,
+            right   : Math.round( zoneCenterX + ( zoneWidth  / 2 )),
+            bottom  : Math.round( zoneCenterY + ( zoneHeight / 2 )),
+            width   : zoneWidth,
+            height  : zoneHeight,
+            centerX : Math.round( zoneCenterX ),
+            centerY : Math.round( zoneCenterY ),
+            owner,
+        }
+    };
+
+    // first create player base in bottom left corner
+
+    const centerBase = generateBase( minBaseWidth, minBaseHeight, maxBaseWidth, maxBaseHeight );
+    bases.push( centerBase );
+
+    // generate opponent bases
+
+    for ( let i = 1; i < amountOfBases; ++i ) {
+        const x      = random() * world.width;
+        const y      = random() * world.height;
+        const width  = randomInRangeInt( minBaseWidth, maxBaseWidth );
+        const height = randomInRangeInt( minBaseHeight, maxBaseHeight );
+        const base   = generateBase( x, y, width, height, Owner.AI );
+        // slightly bigger to allow space between bases (currently broken??)
+        const baseBounds = generateBase( x, y, width * 2, height * 2 );
+        if ( checkIfFree( baseBounds, world, bases, false )) {
+            bases.push( base );
+        }
+    }
+
+    bases.forEach(({ left, right, top, bottom, width, height, centerX, centerY }, index ) => {
+        // create terrain for all generated bases
+        // TODO: this is all boring squares
+        for ( let x = left; x < right; ++x ) {
+            for ( let y = top; y < bottom; ++y ) {
+                const tile = terrain[ coordinateToIndex( x, y, world )];
+                if ( tile ) {
+                    tile.type = TileTypes.ROCK;
+                }
+            }
+        }
+
+        // TODO generate all base contents (default buildings / opponent structures)
+        /*
+        let amount = randomInRangeInt( 1, 4 );
+        if ( DEBUG ) {
+            console.warn("generate " + amount + " buildings for base " + (index + 1 )+ " at coords " + centerX + " x " + centerY);
+        }
+        generateGroup(
+            world.buildings, width, height, centerX, centerY, world, amount,
+            BuildingFactory.create, sizeBuilding.width, [ TileTypes.GROUND ]
+        );
+        */
+    });
+    return bases;
 }

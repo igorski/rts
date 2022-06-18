@@ -10,7 +10,8 @@ describe( "Actor factory", () => {
             x: 100, y: 120,
             width: 5, height: 4,
             maxEnergy: 10, energy: 5,
-            attack: 2, defense: 4
+            attack: 2, defense: 4,
+            owner: 2, completion: 0.5,
         });
         expect( actor.type ).toEqual( ActorType.BUILDING );
         expect( actor.subClass ).toEqual( Building.TURRET );
@@ -22,6 +23,8 @@ describe( "Actor factory", () => {
         expect( actor.energy ).toEqual( 5 );
         expect( actor.attack ).toEqual( 2 );
         expect( actor.defense ).toEqual( 4 );
+        expect( actor.owner ).toEqual( 2 );
+        expect( actor.completion ).toEqual( 0.5 );
     });
 
     it( "should be able to serialize and deserialize an Actor instance", () => {
@@ -31,7 +34,8 @@ describe( "Actor factory", () => {
             x: 50, y: 60,
             width: 3, height: 2,
             maxEnergy: 5, energy: 2,
-            attack: 1, defense: 2
+            attack: 1, defense: 2,
+            owner: 1, completion: 1,
         });
         const serialized = ActorFactory.serialize( actor );
         expect( ActorFactory.deserialize( serialized )).toEqual( actor );

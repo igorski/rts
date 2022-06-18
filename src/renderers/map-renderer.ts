@@ -76,6 +76,10 @@ export const renderWorldMap = ( world: EnvironmentDef ) => {
                     spriteX = 384;
                     tileColor = "#0000FF";
                     break;
+                case TileTypes.ROCK:
+                    spriteX = 128;
+                    tileColor = "#666";
+                    break;
                 case TileTypes.MOUNTAIN:
                     spriteX = 128;
                     tileColor = "#999900";

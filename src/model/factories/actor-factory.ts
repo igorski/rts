@@ -20,7 +20,7 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-import type { ActorType, Building } from "@/definitions/actors";
+import type { ActorType, Building, Owner } from "@/definitions/actors";
 
 export type Actor = {
     type: ActorType;
@@ -33,6 +33,8 @@ export type Actor = {
     energy: number;
     attack: number;
     defense: number;
+    owner: Owner;
+    completion: number;
 };
 
 type SerializedActor = {
@@ -46,6 +48,8 @@ type SerializedActor = {
     e: number;
     a: number;
     d: number;
+    o: Owner;
+    c: number;
 };
 
 interface ActorProps {
@@ -59,13 +63,16 @@ interface ActorProps {
     energy?: number;
     attack?: number;
     defense?: number;
+    owner?: number;
+    completion?: number;
 };
 
 const ActorFactory =
 {
     create({
         type, subClass, x = 0, y = 0, width = 1, height = 1,
-        maxEnergy = 1, energy = 1, attack = 0, defense = 0
+        maxEnergy = 1, energy = 1, attack = 0, defense = 0,
+        owner = 0, completion = 1,
     }: ActorProps ): Actor {
         return {
             type,
@@ -74,6 +81,7 @@ const ActorFactory =
             width, height,
             maxEnergy, energy,
             attack, defense,
+            owner, completion,
         };
     },
 
@@ -89,6 +97,8 @@ const ActorFactory =
             e: actor.energy,
             a: actor.attack,
             d: actor.defense,
+            o: actor.owner,
+            c: actor.completion,
         };
     },
 
@@ -104,6 +114,8 @@ const ActorFactory =
             energy: data.e,
             attack: data.a,
             defense: data.d,
+            owner: data.o,
+            completion: data.c,
         });
     },
 };

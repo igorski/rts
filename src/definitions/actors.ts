@@ -30,3 +30,8 @@ export enum Building {
     BARRACKS,
     TURRET
 };
+
+export enum Owner {
+    PLAYER,
+    AI
+};

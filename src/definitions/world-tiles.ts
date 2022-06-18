@@ -24,6 +24,7 @@ export enum TileTypes {
     GROUND,
     GRASS,
     SAND,
+    ROCK,
     ROAD,
     WATER,
     MOUNTAIN,
@@ -36,6 +37,7 @@ export interface EnvironmentDef {
     width: number;
     height: number;
     terrain: TileDef[];
+    bases: BaseDef[];
 };
 
 export interface TileDef {
@@ -43,6 +45,18 @@ export interface TileDef {
     y: number;
     height: number;
     type: TileTypes;
+};
+
+export interface BaseDef {
+    owner: number;
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+    width: number;
+    height: number;
+    centerX: number;
+    centerY: number;
 };
 
 export const TILE_SIZE: number = 128;
