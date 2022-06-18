@@ -31,6 +31,10 @@ export enum Building {
     TURRET
 };
 
+export enum Unit {
+    SCOUT,
+};
+
 export enum Owner {
     PLAYER,
     AI

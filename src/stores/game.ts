@@ -23,6 +23,7 @@
 import { defineStore } from "pinia";
 import type { EnvironmentDef } from "@/definitions/world-tiles";
 import { updateEffect } from "@/model/actions/effect-actions";
+import type { Actor } from "@/model/factories/actor-factory";
 import type { Effect } from "@/model/factories/effect-factory";
 import GameFactory, { type Game } from "@/model/factories/game-factory";
 
@@ -40,11 +41,12 @@ type GameState = {
     gameState: GameStates;
     lastRender: number;
     gameTime: number;
-    effects: Effect[]
+    actors: Actor[];
+    effects: Effect[];
 };
 
 type GameGetters = {
-
+    gameActors: ( state: GameState ) => Actor[]
 };
 
 type GameActions = {
@@ -70,10 +72,11 @@ export const useGameStore = defineStore<string, GameState, GameGetters, GameActi
         gameState : GameStates.ACTIVE,
         lastRender : 0,
         gameTime : 0,
+        actors: [],
         effects : [],
     }),
     getters: {
-
+        gameActors: ( state: GameState ): Actor[] => state.actors,
     },
     actions: {
         init(): Promise<void> {
@@ -84,9 +87,11 @@ export const useGameStore = defineStore<string, GameState, GameGetters, GameActi
             return Promise.resolve();
         },
         setGame( game: Game ): void {
-            this.world   = game.world;
-            this.created = game.created;
-            this.effects = game.effects;
+            this.world    = game.world;
+            this.gameTime = game.gameTime;
+            this.created  = game.created;
+            this.actors   = game.actors;
+            this.effects  = game.effects;
         },
         setGameState( value: GameStates ): void {
             this.gameState = value;

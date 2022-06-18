@@ -20,11 +20,14 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-import type { ActorType, Building, Owner } from "@/definitions/actors";
+import type { ActorType, Building, Unit } from "@/definitions/actors";
+import { Owner } from "@/definitions/actors";
+import { getUid } from "@/utils/uid-util";
 
 export type Actor = {
+    id: string;
     type: ActorType;
-    subClass: Building;
+    subClass: Building | Unit;
     x: number;
     y: number;
     width: number;
@@ -37,9 +40,10 @@ export type Actor = {
     completion: number;
 };
 
-type SerializedActor = {
+export type SerializedActor = {
+    i: string;
     t: ActorType;
-    s: Building;
+    s: Building | Unit;
     x: number;
     y: number;
     w: number;
@@ -54,7 +58,7 @@ type SerializedActor = {
 
 interface ActorProps {
     type: ActorType;
-    subClass: Building;
+    subClass: Building | Unit;
     x?: number;
     y?: number;
     width?: number;
@@ -72,9 +76,10 @@ const ActorFactory =
     create({
         type, subClass, x = 0, y = 0, width = 1, height = 1,
         maxEnergy = 1, energy = 1, attack = 0, defense = 0,
-        owner = 0, completion = 1,
+        owner = Owner.AI, completion = 1,
     }: ActorProps ): Actor {
         return {
+            id: getUid(),
             type,
             subClass,
             x, y,
@@ -87,6 +92,7 @@ const ActorFactory =
 
     serialize( actor: Actor ): SerializedActor {
         return {
+            i: actor.id,
             t: actor.type,
             s: actor.subClass,
             x: actor.x,
@@ -103,7 +109,7 @@ const ActorFactory =
     },
 
     deserialize( data: SerializedActor ): Actor {
-        return ActorFactory.create({
+        const actor = ActorFactory.create({
             type: data.t,
             subClass: data.s,
             x: data.x,
@@ -117,6 +123,8 @@ const ActorFactory =
             owner: data.o,
             completion: data.c,
         });
+        actor.id = data.i;
+        return actor;
     },
 };
 export default ActorFactory;

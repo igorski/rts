@@ -25,45 +25,48 @@
         class="header"
         :class="{ 'header--expanded': menuOpened }"
     >
-        <nav class="menu">
-            <div class="menu__toggle"
-                 @click="toggleMenu()"
-             >
-                <span>&#9776;</span>
+        <div class="header__top">
+            <nav class="menu">
+                <div class="menu__toggle"
+                     @click="toggleMenu()"
+                 >
+                    <span>&#9776;</span>
+                </div>
+                <ul class="menu__items">
+                    <li>
+                        <button
+                            v-t="'file'"
+                            type="button"
+                            class="submenu__toggle" title="file"
+                        ></button>
+                        <ul class="menu__items__sub">
+                            <li>
+                                <button
+                                    v-t="'saveGame'"
+                                    type="button"
+                                    :disabled="!hasActiveGame || isGameOver"
+                                    title="Save game"
+                                    @click="handleSave()"
+                                ></button>
+                            </li>
+                            <li>
+                                <button
+                                    v-t="'resetGame'"
+                                    type="button"
+                                    title="Reset game"
+                                    :disabled="!hasActiveGame"
+                                    @click="handleReset()"
+                                ></button>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+            <div class="credits">
+                {{ credits }} <span v-t="'credits'"></span>
             </div>
-            <ul class="menu__items">
-                <li>
-                    <button
-                        v-t="'file'"
-                        type="button"
-                        class="submenu__toggle" title="file"
-                    ></button>
-                    <ul class="menu__items__sub">
-                        <li>
-                            <button
-                                v-t="'saveGame'"
-                                type="button"
-                                :disabled="!hasActiveGame || isGameOver"
-                                title="Save game"
-                                @click="handleSave()"
-                            ></button>
-                        </li>
-                        <li>
-                            <button
-                                v-t="'resetGame'"
-                                type="button"
-                                title="Reset game"
-                                :disabled="!hasActiveGame"
-                                @click="handleReset()"
-                            ></button>
-                        </li>
-                    </ul>
-                </li>
-            </ul>
-        </nav>
-        <div class="credits">
-            {{ credits }} <span v-t="'credits'"></span>
         </div>
+        <div class="header__bottom">{{ statusMessage }}</div>
     </header>
 </template>
 
@@ -90,6 +93,9 @@ export default defineComponent ({
         ]),
         ...mapState( usePlayerStore, [
             "credits",
+        ]),
+        ...mapState( useSystemStore, [
+            "statusMessage",
         ]),
         hasActiveGame(): boolean {
             return this.created > 0 && !this.isGameOver; // e.g. creating new character/restart
@@ -144,12 +150,24 @@ export default defineComponent ({
     left: 0;
     top: 0;
     z-index: $z-index-header;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
     background-color: $color-background;
     width: 100%;
     padding: 0;
+
+    &__top {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        width: 100%;
+    }
+
+    &__bottom {
+        border: 1px solid #000;
+        border-radius: 7px;
+        height: 40px;
+        padding: $spacing-small;
+        box-sizing: border-box;
+    }
 
     @include mobile() {
         width: 100%;

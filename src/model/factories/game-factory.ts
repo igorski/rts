@@ -21,22 +21,28 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 import LZString from "lz-string";
+import { ActorType, Unit, Owner } from "@/definitions/actors";
 import type { EnvironmentDef } from "@/definitions/world-tiles";
+import ActorFactory, { type Actor, type SerializedActor } from "./actor-factory";
 import EffectFactory, { type Effect, type SerializedEffect } from "./effect-factory";
 import PlayerFactory, { type Player, type SerializedPlayer } from "./player-factory";
 import WorldFactory, { type SerializedWorld } from "./world-factory";
 
 export type Game = {
     created: number;
+    gameTime: number;
     world: EnvironmentDef;
     player: Player;
+    actors: Actor[];
     effects: Effect[];
 };
 
 type SerializedGame = {
     c: number;
+    t: number;
     p: SerializedPlayer;
     w: SerializedWorld;
+    a: SerializedActor[];
     e: SerializedEffect[];
 };
 
@@ -44,19 +50,31 @@ const GameFactory =
 {
     create( world?: EnvironmentDef ): Game {
         const now = Date.now();
-        return {
+        const game = {
             created: now,
+            gameTime: 0,
             world: world || WorldFactory.populate( WorldFactory.create()),
             player: PlayerFactory.create(),
-            effects: [],
+            actors: [] as Actor[],
+            effects: [] as Effect[],
         };
+        // always give player one scout
+        game.actors.push(
+            ActorFactory.create({
+                type: ActorType.UNIT, subClass: Unit.SCOUT, owner: Owner.PLAYER,
+                x: game.world.x, y: game.world.y
+            })
+        );
+        return game;
     },
 
     serialize( game: Game ): string {
         const out: SerializedGame = {
             c: game.created,
+            t: game.gameTime,
             w: WorldFactory.serialize( game.world ),
             p: PlayerFactory.serialize( game.player ),
+            a: game.actors.map( ActorFactory.serialize ),
             e: game.effects.map( EffectFactory.serialize ),
         };
         const json = JSON.stringify( out );
@@ -83,10 +101,13 @@ const GameFactory =
             return undefined;
         }
 
-        const game   = GameFactory.create( WorldFactory.deserialize( data.w ));
-        game.created = data.c;
-        game.player  = PlayerFactory.deserialize( data.p );
-        game.effects = data.e.map( EffectFactory.deserialize );
+        const game = GameFactory.create( WorldFactory.deserialize( data.w ));
+
+        game.created  = data.c;
+        game.gameTime = data.t;
+        game.player   = PlayerFactory.deserialize( data.p );
+        game.actors   = data.a.map( ActorFactory.deserialize );
+        game.effects  = data.e.map( EffectFactory.deserialize );
 
         return game;
     }

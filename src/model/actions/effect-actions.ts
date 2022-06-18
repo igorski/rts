@@ -1,8 +1,10 @@
 import type { Store } from "pinia";
 import type { Effect } from "@/model/factories/effect-factory";
+import { ACTION_STORE_NAME, useActionStore } from "@/stores/action";
 import { CAMERA_STORE_NAME, useCameraStore } from "@/stores/camera";
 import { GAME_STORE_NAME, useGameStore } from "@/stores/game";
 
+let actionStore: Store | undefined;
 let cameraStore: Store | undefined;
 let gameStore: Store | undefined;
 let storeRef: Store | undefined;
@@ -28,6 +30,13 @@ export const updateEffect = ( effect: Effect, currentTime: number ): boolean => 
     switch ( store ) {
         default:
             throw new Error( `Unknown store "${store}"` );
+
+        case ACTION_STORE_NAME:
+            if ( actionStore === undefined ) {
+                actionStore = useActionStore();
+            }
+            storeRef = actionStore;
+            break;
 
         case CAMERA_STORE_NAME:
             if ( cameraStore === undefined ) {

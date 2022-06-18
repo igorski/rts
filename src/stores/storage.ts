@@ -78,8 +78,10 @@ export const useStorageStore = defineStore<string, StorageState, StorageGetters,
 
             const data = GameFactory.serialize({
                 created: gameStore.created,
+                gameTime: gameStore.gameTime,
                 world: gameStore.world,
                 player: playerStore.player,
+                actors: gameStore.actors,
                 effects: gameStore.effects
             });
             storage.set( STORAGE_KEY, data );

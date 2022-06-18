@@ -22,6 +22,7 @@
  */
 import { sprite } from "zcanvas";
 import { CameraActions } from "@/definitions/camera-actions";
+import type { Actor } from "@/definitions/actors";
 import type { Point, Rectangle, Box } from "@/definitions/math";
 import type { TileDef, EnvironmentDef } from "@/definitions/world-tiles";
 import {
@@ -40,6 +41,7 @@ const POINTER_HIT_AREA = 50;
 export default class GameRenderer extends sprite {
     // @ts-expect-error no initializer
     private world: EnvironmentDef;
+    private actors: Actor[] = [];
     private terrain: TileDef[] = [];
     private mapCenterX: number = 0;
     private mapCenterY: number = 0;
@@ -60,9 +62,10 @@ export default class GameRenderer extends sprite {
         this.interactionCallback = interactionCallback;
     }
 
-    setWorld( world: EnvironmentDef ): void {
+    setWorld( world: EnvironmentDef, actors: Actor[] ): void {
         this.world   = world;
         this.terrain = world.terrain;
+        this.actors  = actors;
     }
 
     setWorldSize( width: number, height: number ): void {
@@ -127,6 +130,13 @@ export default class GameRenderer extends sprite {
                 const absoluteY = ( y + this.viewport.top ) - TILE_HEIGHT_HALF / 2;
 
                 this.hoverTile = this.absoluteToTile( absoluteX, absoluteY );
+
+                const actor = this.actors.find(({ x, y }) => x === this.hoverTile.x && y === this.hoverTile.y );
+                if ( actor ) {
+                    this.interactionCallback({ type: "actor", data: actor });
+                } else {
+                    this.interactionCallback({ type: "click", data: this.hoverTile });
+                }
                 // debug info, what is the range of visible tiles we can see ?
                 console.log(
                     "top left:"+ JSON.stringify( this.absoluteToTile( this.viewport.left, this.viewport.top )),
@@ -144,7 +154,7 @@ export default class GameRenderer extends sprite {
         const action: CameraActions = this.pointerActions.toCameraAction();
 
         if ( action !== CameraActions.IDLE ) {
-            this.interactionCallback({ type: "pan", action });
+            this.interactionCallback({ type: "pan", data: action });
         }
     }
 
@@ -174,6 +184,17 @@ export default class GameRenderer extends sprite {
                 point.x, point.y,
                 128, 128
             );
+        }
+
+        for ( const actor: Actor of this.actors ) {
+            // TODO cache these points for immobile actors
+            const point = this.tileToLocal( actor.x, actor.y );
+            if ( point.x >= 0 && point.x <= this.viewport.width && point.y >= 0 && point.y <= this.viewport.height ) {
+                ctx.fillStyle = "yellow";
+                const w = 64;
+                // TODO: use zCanvas draw-safe method
+                ctx.fillRect( point.x + w / 2, point.y - w / 2, w, w );
+            }
         }
 
         if ( true )return

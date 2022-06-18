@@ -31,6 +31,8 @@
 import { defineComponent } from "vue";
 import { canvas } from "zcanvas";
 import { mapState, mapActions } from "pinia";
+import type { Actor } from "@/definitions/actors";
+import type { Point } from "@/definitions/math";
 import type { EnvironmentDef, TileDef } from "@/definitions/world-tiles";
 import { CameraActions } from "@/definitions/camera-actions";
 import { TILE_SIZE } from "@/definitions/world-tiles";
@@ -38,8 +40,12 @@ import { initCache } from "@/renderers/render-cache";
 import { renderWorldMap } from "@/renderers/map-renderer";
 import GameRenderer from "@/renderers/game-renderer";
 import WorldMap from "@/components/world-map/world-map.vue";
+import { useActionStore } from "@/stores/action";
 import { useGameStore } from "@/stores/game";
 import { useCameraStore } from "@/stores/camera";
+import { useSystemStore } from "@/stores/system";
+
+import messages from "./messages.json";
 
 const MIN_AMOUNT_OF_TILES = 5; // minimum amount of tiles visible on the dominant axis of the screen
 let renderer: GameRenderer;
@@ -48,11 +54,16 @@ let keyHandler: ( e: KeyboardEvent ) => void;
 let handlers: { event: string, callback: EventListenerOrEventListenerObject }[] = [];
 
 export default defineComponent({
+    i18n: { messages },
     components: {
         WorldMap,
     },
     computed: {
+        ...mapState( useActionStore, [
+            "hasSelection",
+        ]),
         ...mapState( useGameStore, [
+            "gameActors",
             "world",
         ]),
         ...mapState( useCameraStore, [
@@ -91,7 +102,7 @@ export default defineComponent({
         zCanvasInstance.insertInPage( this.$refs.canvasContainer as HTMLElement );
         zCanvasInstance.addChild( renderer );
 
-        renderer.setWorld( this.world );
+        renderer.setWorld( this.world, this.gameActors );
         this.handleResize();
 
         // keyboard control : todo put somewhere else
@@ -107,11 +118,18 @@ export default defineComponent({
         document.body.removeEventListener( "keydown", keyHandler );
     },
     methods: {
+        ...mapActions( useActionStore, [
+            "setSelection",
+            "assignTarget",
+        ]),
         ...mapActions( useGameStore, [
             "update",
         ]),
         ...mapActions( useCameraStore, [
             "moveCamera",
+        ]),
+        ...mapActions( useSystemStore, [
+            "setMessage",
         ]),
         handleResize(): void {
             const { clientWidth, clientHeight } = document.documentElement;
@@ -138,12 +156,23 @@ export default defineComponent({
             this.update( timestamp );
             renderer.update();
         },
-        handleRendererInteractions({ type, action }: { type: string, action: never }): void {
+        handleRendererInteractions({ type, data }: { type: string, data: never }): void {
             switch ( type ) {
                 default:
                     break;
+                case "actor":
+                    this.setSelection([ data as Actor ]);
+                    this.setMessage( "actor clicked" );
+                    break;
+                case "click":
+                    if ( this.hasSelection ) {
+                        const point = data as Point;
+                        // TODO feedback on success
+                        this.assignTarget( point.x, point.y );
+                    }
+                    break;
                 case "pan":
-                    this.moveCamera( action as CameraActions, 1 / 60 );
+                    this.moveCamera( data as CameraActions, 1 / 60 );
                     break;
             }
         },

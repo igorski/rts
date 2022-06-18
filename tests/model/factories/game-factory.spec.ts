@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
+import { ActorType, Unit } from "@/definitions/actors";
 import type { EnvironmentDef } from "@/definitions/world-tiles";
+import ActorFactory from "@/model/factories/actor-factory";
 import EffectFactory from "@/model/factories/effect-factory";
 import GameFactory from "@/model/factories/game-factory";
 import WorldFactory from "@/model/factories/world-factory";
@@ -9,6 +11,7 @@ describe( "Game factory", () => {
         const game = GameFactory.create();
         WorldFactory.populate( game.world );
 
+        game.gameTime = 500;
         game.effects = [
             EffectFactory.create({
                 store: "storeName",
@@ -18,6 +21,9 @@ describe( "Game factory", () => {
                 from: 0,
                 to: 1
             })
+        ];
+        game.actors = [
+            ActorFactory.create({ type: ActorType.UNIT, subClass: Unit.SCOUT })
         ];
         const serialized = GameFactory.serialize( game );
         expect( GameFactory.deserialize( serialized )).toEqual( game );
