@@ -1,5 +1,7 @@
 import type { Point } from "@/definitions/math";
 import type { EnvironmentDef } from "@/definitions/world-tiles";
+import type { Actor } from "@/model/factories/actor-factory";
+
 const { abs, max, pow, sqrt } = Math;
 
 /**
@@ -14,9 +16,13 @@ const { abs, max, pow, sqrt } = Math;
  * @param {number=} maxWalkableTileNum the terrain in an environment is represented
  *                  by integers defining the terrain type. This number defines which
  *                  types of terrain are deemed walkable (e.g. road, grass, mud, etc.)
+ * @param {Actor[]=} buildings map of buildings to check against (cannot walk on building, right?)
  * @return {Point[]}
  */
-export const findPath = ( world: EnvironmentDef, startX: number, startY: number, targetX: number, targetY: number, maxWalkableTileNum: number = 0 ): any[] => {
+export const findPath = (
+    world: EnvironmentDef, startX: number, startY: number, targetX: number, targetY: number,
+    maxWalkableTileNum: number = 0, buildings: Actor[] = []
+): Point[] => {
     const pathStart = [ startX,  startY  ];
     const pathEnd   = [ targetX, targetY ];
 
@@ -140,8 +146,16 @@ export const findPath = ( world: EnvironmentDef, startX: number, startY: number,
 
     // returns boolean value (world cell is available and open)
     function canWalkHere( x: number, y: number ): boolean {
-        return x < worldWidth && y < worldHeight &&
-               terrain[ y * worldWidth + x ].type <= maxWalkableTileNum;
+        const accessible = x < worldWidth && y < worldHeight && terrain[ y * worldWidth + x ].type <= maxWalkableTileNum;
+        if ( !accessible ) {
+            return false;
+        }
+        return !buildings.find( building => {
+            if ( x >= building.x && x < building.x + building.width && y >= building.y && y < building.y + building.height ) {
+                return true;
+            }
+            return false;
+        });
     }
 
     // Path function, executes AStar algorithm operations

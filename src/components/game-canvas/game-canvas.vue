@@ -67,6 +67,7 @@ export default defineComponent({
         ]),
         ...mapState( useGameStore, [
             "gameActors",
+            "buildings",
             "world",
         ]),
         ...mapState( useCameraStore, [
@@ -75,6 +76,12 @@ export default defineComponent({
         ]),
     },
     watch: {
+        buildings( value: Actor[], oldValue: Actor[] = [] ): void {
+            if ( value.length !== oldValue.length ) {
+                // TODO: stamp buildings onto pristine background-only map to speed up proceedings
+                renderWorldMap( this.world, value );
+            }
+        },
         placableBuilding( value: BuildingMapping | undefined ): void {
             if ( value !== undefined ) {
                 renderer.setPlaceMode( value.width, value.height );

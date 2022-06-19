@@ -95,7 +95,7 @@ export const useActionStore = defineStore<string, ActionState, ActionGetters, Ac
                 const startX  = Math.round( actor.x );
                 const startY  = Math.round( actor.y );
 
-                const waypoints = findPath( gameStore.world, startX, startY, targetX, targetY, maxTile );
+                const waypoints = findPath( gameStore.world, startX, startY, targetX, targetY, maxTile, gameStore.buildings );
                 const speed = DEFAULT_WALK_SPEED; // TODO determine per actor type
 
                 // enqueue animated movement for each waypoint as an Effect

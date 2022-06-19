@@ -20,11 +20,14 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+import { ActorType } from "@/definitions/actors";
 import type { EnvironmentDef } from "@/definitions/world-tiles";
 import {
     TileTypes, TILE_SIZE, TILE_WIDTH_HALF, TILE_HEIGHT_HALF, horPosition, verPosition
 } from "@/definitions/world-tiles";
+import type { Actor } from "@/model/factories/actor-factory";
 import { coordinateToIndex } from "@/utils/terrain-util";
+import { renderBuilding } from "./building-renderer";
 import CACHE from "./render-cache";
 
 const { TILES } = CACHE.sprites;
@@ -35,7 +38,7 @@ const DEBUG = false;//process.env.NODE_ENV !== "production";
 /**
  * Renders given worlds tiled terrain into a pre-rendered HTMLCanvasElement
  */
-export const renderWorldMap = ( world: EnvironmentDef ) => {
+export const renderWorldMap = ( world: EnvironmentDef, actors: Actor[] = [] ) => {
     const mapWidth  = Math.ceil( world.width * TILE_SIZE );
     const mapHeight = verPosition( world.width, world.height ) + TILE_HEIGHT_HALF;
 
@@ -86,7 +89,7 @@ export const renderWorldMap = ( world: EnvironmentDef ) => {
                     break;
             }
 
-            // render the tile
+            // 1. render the tile onto the isometric map
 
             for ( let i = 0; i < height; ++i ) {
                 const destX = halfWidth + ( horPosition( x, y ) - TILE_WIDTH_HALF );
@@ -111,8 +114,28 @@ export const renderWorldMap = ( world: EnvironmentDef ) => {
                     ctxIsometric.fillText(`  ${destX}x${destY}`, destX + TILE_WIDTH_HALF / 2, destY + TILE_HEIGHT_HALF / 1.5 );
                 }
             }
+
+            // 2. render tile on 2D map
+
             ctx2D.fillStyle = tileColor;
             ctx2D.fillRect( x * CVS_2D_MAGNIFIER, y * CVS_2D_MAGNIFIER, CVS_2D_MAGNIFIER, CVS_2D_MAGNIFIER );
         }
     }
+
+    // render building actors
+
+    const viewport = { left: 0, top: 0 } as Rectangle;
+    actors.forEach( actor => {
+        if ( actor.type !== ActorType.BUILDING ) {
+            return;
+        }
+        renderBuilding( ctxIsometric, halfWidth, viewport, actor );
+
+        ctx2D.fillStyle = "darkgray";
+        for ( let x = actor.x, xl = x + actor.width; x < xl; ++x ) {
+            for ( let y = actor.y, yl = y + actor.height; y < yl; ++y ) {
+                ctx2D.fillRect( x * CVS_2D_MAGNIFIER, y * CVS_2D_MAGNIFIER, CVS_2D_MAGNIFIER, CVS_2D_MAGNIFIER );
+            }
+        }
+    });
 }

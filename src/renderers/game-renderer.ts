@@ -23,6 +23,7 @@
 import { sprite } from "zcanvas";
 import { CameraActions } from "@/definitions/camera-actions";
 import type { Actor } from "@/definitions/actors";
+import { ActorType } from "@/definitions/actors";
 import type { Point, Rectangle, Box, Size } from "@/definitions/math";
 import type { TileDef, EnvironmentDef } from "@/definitions/world-tiles";
 import {
@@ -32,6 +33,7 @@ import {
 import { coordinateToIndex } from "@/utils/terrain-util";
 import DirectionBox from "@/model/math/direction-box";
 import CACHE from "./render-cache";
+import { renderBuilding } from "./building-renderer";
 
 const { CURSORS, TILES } = CACHE.sprites;
 const renderedMap = CACHE.map.isometric;
@@ -149,6 +151,15 @@ export default class GameRenderer extends sprite {
             case "mousedown":
             case "touchdown":
 
+                // debug info, what is the range of visible tiles we can see ?
+                console.log(
+                    "top left:"+ JSON.stringify( this.absoluteToTile( this.viewport.left, this.viewport.top )),
+                    "bottom right:"+ JSON.stringify( this.absoluteToTile(
+                        this.viewport.left + this.viewport.width, this.viewport.top + this.viewport.height
+                    )),
+                );
+                console.log("mouse coord at " + absoluteX + " x " + absoluteY + ", clicked on tile " + JSON.stringify( this.pointerPos ) + " of type " + this.world.terrain.find( tile => tile.x === this.pointerPos.x && tile.y === this.pointerPos.y )?.type );
+
                 if ( this.placeMode !== undefined ) {
                     if ( !this.canPlace() ) {
                         return;
@@ -162,14 +173,6 @@ export default class GameRenderer extends sprite {
                 } else {
                     this.interactionCallback({ type: CanvasActions.AREA_CLICK, data: this.pointerPos });
                 }
-                // debug info, what is the range of visible tiles we can see ?
-                console.log(
-                    "top left:"+ JSON.stringify( this.absoluteToTile( this.viewport.left, this.viewport.top )),
-                    "bottom right:"+ JSON.stringify( this.absoluteToTile(
-                        this.viewport.left + this.viewport.width, this.viewport.top + this.viewport.height
-                    )),
-                );
-                console.log("mouse coord at " + absoluteX + " x " + absoluteY + ", clicked on tile " + JSON.stringify( this.pointerPos ) + " of type " + this.world.terrain.find( tile => tile.x === this.pointerPos.x && tile.y === this.pointerPos.y )?.type );
                 break;
         }
         return true;
@@ -238,10 +241,14 @@ export default class GameRenderer extends sprite {
             // TODO cache these points for immobile actors?
             const point = this.tileToLocal( actor.x, actor.y );
             if ( point.x >= 0 && point.x <= width && point.y >= 0 && point.y <= height ) {
-                ctx.fillStyle = "yellow";
-                const w = 64;
-                // TODO: use zCanvas draw-safe method
-                ctx.fillRect( point.x + w / 2, point.y - w / 2, w, w );
+                if ( actor.type === ActorType.UNIT ) {
+                    ctx.fillStyle = "yellow";
+                    const w = 64;
+                    // TODO: use zCanvas draw-safe method
+                    ctx.fillRect( point.x + w / 2, point.y - w / 2, w, w );
+                } else if ( actor.type === ActorType.BUILDING ) {
+                    renderBuilding( ctx, renderedMap.width * 0.5, this.viewport, actor );
+                }
             }
         }
 
