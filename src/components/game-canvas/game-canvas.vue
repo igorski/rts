@@ -31,14 +31,16 @@
 import { defineComponent } from "vue";
 import { canvas } from "zcanvas";
 import { mapState, mapActions } from "pinia";
-import type { Actor } from "@/definitions/actors";
+import { ActorType, type BuildingMapping } from "@/definitions/actors";
+import { getBuildingMappings, getUnitMappings } from "@/definitions/actors";
 import type { Point } from "@/definitions/math";
 import type { EnvironmentDef, TileDef } from "@/definitions/world-tiles";
 import { CameraActions } from "@/definitions/camera-actions";
 import { TILE_SIZE } from "@/definitions/world-tiles";
+import { Actor } from "@/model/factories/actor-factory";
 import { initCache } from "@/renderers/render-cache";
 import { renderWorldMap } from "@/renderers/map-renderer";
-import GameRenderer from "@/renderers/game-renderer";
+import GameRenderer, { CanvasActions } from "@/renderers/game-renderer";
 import WorldMap from "@/components/world-map/world-map.vue";
 import { useActionStore } from "@/stores/action";
 import { useGameStore } from "@/stores/game";
@@ -61,6 +63,7 @@ export default defineComponent({
     computed: {
         ...mapState( useActionStore, [
             "hasSelection",
+            "placableBuilding",
         ]),
         ...mapState( useGameStore, [
             "gameActors",
@@ -71,7 +74,19 @@ export default defineComponent({
             "cameraY",
         ]),
     },
+    watch: {
+        placableBuilding( value: BuildingMapping | undefined ): void {
+            if ( value !== undefined ) {
+                renderer.setPlaceMode( value.width, value.height );
+            } else {
+                renderer.unsetPlaceMode();
+            }
+        },
+    },
     async mounted(): Promise<void> {
+        this.buildingMappings = getBuildingMappings();
+        this.unitMappings = getUnitMappings();
+
         /**
          * Construct zCanvas instance to render the game world. The zCanvas
          * also maintains the game loop that will update the world prior to each render cycle.
@@ -121,6 +136,7 @@ export default defineComponent({
         ...mapActions( useActionStore, [
             "setSelection",
             "assignTarget",
+            "completePlacement",
         ]),
         ...mapActions( useGameStore, [
             "update",
@@ -156,23 +172,31 @@ export default defineComponent({
             this.update( timestamp );
             renderer.update();
         },
-        handleRendererInteractions({ type, data }: { type: string, data: never }): void {
+        handleRendererInteractions({ type, data }: { type: CanvasActions, data: never }): void {
             switch ( type ) {
                 default:
                     break;
-                case "actor":
-                    this.setSelection([ data as Actor ]);
-                    this.setMessage( "actor clicked" );
+                case CanvasActions.ACTOR_SELECT:
+                    const actor: Actor = data as Actor;
+                    this.setSelection([ actor ]);
+                    if ( actor.type === ActorType.BUILDING ) {
+                        this.setMessage( this.buildingMappings.find(({ type }) => type === actor.subClass ).name );
+                    } else if ( actor.type === ActorType.UNIT ) {
+                        this.setMessage( this.unitMappings.find(({ type }) => type === actor.subClass ).name );
+                    }
                     break;
-                case "click":
+                case CanvasActions.AREA_CLICK:
                     if ( this.hasSelection ) {
                         const point = data as Point;
                         // TODO feedback on success
                         this.assignTarget( point.x, point.y );
                     }
                     break;
-                case "pan":
+                case CanvasActions.CAMERA_PAN:
                     this.moveCamera( data as CameraActions, 1 / 60 );
+                    break;
+                case CanvasActions.OBJECT_PLACE:
+                    this.completePlacement( data as Point );
                     break;
             }
         },

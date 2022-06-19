@@ -20,6 +20,8 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+import { useI18n } from "vue-i18n";
+
 export enum ActorType {
     BUILDING,
     UNIT
@@ -31,11 +33,80 @@ export enum Building {
     TURRET
 };
 
+export type BuildingMapping = {
+    type: Building | string;
+    cost: number;
+    name: string;
+    width: number;
+    height: number;
+};
+
 export enum Unit {
     SCOUT,
+};
+
+type UnitMapping = {
+    type: Unit | string;
+    name: string;
 };
 
 export enum Owner {
     PLAYER,
     AI
+};
+
+export const getBuildingMappings = (): BuildingMapping[] => {
+    return Object.values( Building )
+        .filter( value => typeof value === "number" )
+        .map( type =>
+    {
+        let cost = 500;
+        let name = "";
+        let width = 1;
+        let height = 1;
+        switch ( type ) {
+            default:
+                if ( process.env.NODE_ENV !== "production" ) {
+                    throw new Error( `There is no mapping for Building type "${type}" available` );
+                }
+                break;
+            case Building.REFINERY:
+                cost = 300;
+                name = "refinery";
+                width = 3;
+                height = 2;
+                break;
+            case Building.BARRACKS:
+                cost = 1000;
+                name = "barracks";
+                width = 3;
+                height = 3;
+                break;
+            case Building.TURRET:
+                cost = 2500;
+                name = "defenseTurret";
+                break;
+
+        }
+        return { type, cost, name: useI18n().t( `building.${name}` ), width, height };
+    });
+};
+
+export const getUnitMappings = (): UnitMapping[] => {
+    return Object.values( Unit )
+        .filter( value => typeof value === "number" )
+        .map( type => {
+            let name = "";
+            switch ( type ) {
+                default:
+                    if ( process.env.NODE_ENV !== "production" ) {
+                        throw new Error( `There is no mapping for Unit type "${type}" available` );
+                    }
+                    break;
+                case Unit.SCOUT:
+                    name = "scout";
+                    break;
+            }
+            return { type, name: useI18n().t( `unit.${name}` )};
+        });
 };

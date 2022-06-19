@@ -35,7 +35,7 @@ type DialogRequest = {
 type SystemState = {
     dialog? : DialogRequest,
     statusMessage?: string,
-    notifications: string[], // TODO
+    notifications: string[],
 };
 
 type SystemGetters = {
@@ -47,6 +47,7 @@ type SystemActions = {
     showError: ( message: string ) => void;
     closeDialog: () => void;
     setMessage: ( message: string ) => void;
+    clearMessage: () => void;
     showNotification: ( message: string ) => void;
     clearNotifications: () => void;
 };
@@ -73,9 +74,11 @@ export const useSystemStore = defineStore<string, SystemState, SystemGetters, Sy
         setMessage( message: string ): void {
             this.statusMessage = message;
         },
+        clearMessage(): void {
+            this.statusMessage = undefined;
+        },
         showNotification( message: string ): void {
             this.notifications.push( message );
-            alert( message ); // TODO
         },
         clearNotifications(): void {
             this.notifications.length = 0;

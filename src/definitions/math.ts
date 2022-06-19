@@ -21,8 +21,13 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 export type Point = {
-    x: number,
-    y: number
+    x: number;
+    y: number;
+};
+
+export type Size = {
+    width: number;
+    height: number;
 };
 
 export type Rectangle = {

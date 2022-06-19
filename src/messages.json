@@ -1,0 +1,12 @@
+{
+    "en": {
+        "building": {
+            "refinery": "Refinery",
+            "barracks": "Barracks",
+            "defenseTurret": "Defense turret"
+        },
+        "unit": {
+            "scout": "Scout"
+        }
+    }
+}

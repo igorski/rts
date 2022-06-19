@@ -21,11 +21,14 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 import { defineStore } from "pinia";
+import type { BuildingMapping } from "@/definitions/actors";
+import type { Point } from "@/definitions/math";
 import { TileTypes } from "@/definitions/world-tiles";
 import type { Actor } from "@/model/factories/actor-factory";
 import EffectFactory, { type Effect } from "@/model/factories/effect-factory";
 import { findPath } from "@/utils/path-finder";
 import { useGameStore } from "./game";
+import { useSystemStore } from "./system";
 
 export const ACTION_STORE_NAME = "action";
 
@@ -38,6 +41,8 @@ type ActorAction = {
 
 type ActionState = {
     selectedActors: Actor[];
+    placableBuilding: BuildingMapping | undefined;
+    placement: Point | undefined;
 };
 
 type ActionGetters = {
@@ -45,6 +50,8 @@ type ActionGetters = {
 };
 
 type ActionActions = {
+    placeBuilding( building: BuildingMapping ): void;
+    completePlacement( position: Point ): void;
     setSelection( actors: Actor[] ): void;
     assignTarget( targetX: number, targetY: number ): void;
     setActorX( action: ActorAction ): void;
@@ -56,11 +63,19 @@ let actor: Actor;
 export const useActionStore = defineStore<string, ActionState, ActionGetters, ActionActions>( ACTION_STORE_NAME, {
     state: (): ActionState => ({
         selectedActors: [],
+        placableBuilding: undefined,
+        placement: undefined,
     }),
     getters: {
         hasSelection: ( state: ActionState ) => state.selectedActors.length > 0,
     },
     actions: {
+        placeBuilding( building: BuildingMapping ): void {
+            this.placableBuilding = building;
+        },
+        completePlacement( position: Point ): void {
+            this.placement = position;
+        },
         setSelection( actors: Actor[] ): void {
             this.selectedActors = actors;
         },

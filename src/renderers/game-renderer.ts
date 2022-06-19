@@ -23,7 +23,7 @@
 import { sprite } from "zcanvas";
 import { CameraActions } from "@/definitions/camera-actions";
 import type { Actor } from "@/definitions/actors";
-import type { Point, Rectangle, Box } from "@/definitions/math";
+import type { Point, Rectangle, Box, Size } from "@/definitions/math";
 import type { TileDef, EnvironmentDef } from "@/definitions/world-tiles";
 import {
     TileTypes, TILE_SIZE, TILE_WIDTH_HALF, TILE_HEIGHT_HALF,
@@ -38,6 +38,13 @@ const renderedMap = CACHE.map.isometric;
 
 const POINTER_HIT_AREA = 50;
 
+export enum CanvasActions {
+    ACTOR_SELECT,
+    AREA_CLICK,
+    CAMERA_PAN,
+    OBJECT_PLACE,
+};
+
 export default class GameRenderer extends sprite {
     // @ts-expect-error no initializer
     private world: EnvironmentDef;
@@ -45,7 +52,7 @@ export default class GameRenderer extends sprite {
     private terrain: TileDef[] = [];
     private mapCenterX: number = 0;
     private mapCenterY: number = 0;
-    private hoverTile: Point = { x: Infinity, y: Infinity };
+    private pointerPos: Point = { x: Infinity, y: Infinity };
     private edges: Box = { left: 0, right: 0, top: 0, bottom: 0 };
     private pointerActions: DirectionBox = new DirectionBox();
     private horizontalTileAmount: number = 0;
@@ -53,6 +60,7 @@ export default class GameRenderer extends sprite {
     private actualTileHeight: number = TILE_SIZE;
     private scale: number = 1;
     private interactionCallback: Function;
+    private placeMode: Size | undefined;
 
     // visible map area
     private viewport: Rectangle = { left: 0, top: 0, width: 0, height: 0 };
@@ -100,7 +108,20 @@ export default class GameRenderer extends sprite {
         };
     }
 
+    setPlaceMode( width: number, height: number ): void {
+        this.placeMode = { width, height };
+    }
+
+    unsetPlaceMode(): void {
+        this.placeMode = undefined;
+    }
+
+    /* zCanvas overrides */
+
     handleInteraction( x: number, y: number, event: Event ): boolean {
+        const absoluteX = ( x + this.viewport.left );
+        const absoluteY = ( y + this.viewport.top ) - TILE_HEIGHT_HALF / 2;
+
         switch ( event.type ) {
             default:
                 break;
@@ -121,21 +142,25 @@ export default class GameRenderer extends sprite {
                 } else {
                     this.pointerActions.resetVertical();
                 }
+                // mouse coordinates relative to absolute map position in isometric view
+                this.pointerPos = this.absoluteToTile( absoluteX, absoluteY );
                 break;
 
             case "mousedown":
             case "touchdown":
-                // mouse coordinates relative to absolute map position in isometric view
-                const absoluteX = ( x + this.viewport.left );
-                const absoluteY = ( y + this.viewport.top ) - TILE_HEIGHT_HALF / 2;
 
-                this.hoverTile = this.absoluteToTile( absoluteX, absoluteY );
+                if ( this.placeMode !== undefined ) {
+                    if ( !this.canPlace() ) {
+                        return;
+                    }
+                    return this.interactionCallback({ type: CanvasActions.OBJECT_PLACE, data: this.pointerPos });
+                }
 
-                const actor = this.actors.find(({ x, y }) => x === this.hoverTile.x && y === this.hoverTile.y );
+                const actor = this.actors.find(({ x, y }) => x === this.pointerPos.x && y === this.pointerPos.y );
                 if ( actor ) {
-                    this.interactionCallback({ type: "actor", data: actor });
+                    this.interactionCallback({ type: CanvasActions.ACTOR_SELECT, data: actor });
                 } else {
-                    this.interactionCallback({ type: "click", data: this.hoverTile });
+                    this.interactionCallback({ type: CanvasActions.AREA_CLICK, data: this.pointerPos });
                 }
                 // debug info, what is the range of visible tiles we can see ?
                 console.log(
@@ -144,7 +169,7 @@ export default class GameRenderer extends sprite {
                         this.viewport.left + this.viewport.width, this.viewport.top + this.viewport.height
                     )),
                 );
-                console.log("mouse coord at " + absoluteX + " x " + absoluteY + ", clicked on tile " + JSON.stringify( this.hoverTile ) + " of type " + this.world.terrain.find( tile => tile.x === this.hoverTile.x && tile.y === this.hoverTile.y )?.type );
+                console.log("mouse coord at " + absoluteX + " x " + absoluteY + ", clicked on tile " + JSON.stringify( this.pointerPos ) + " of type " + this.world.terrain.find( tile => tile.x === this.pointerPos.x && tile.y === this.pointerPos.y )?.type );
                 break;
         }
         return true;
@@ -154,7 +179,7 @@ export default class GameRenderer extends sprite {
         const action: CameraActions = this.pointerActions.toCameraAction();
 
         if ( action !== CameraActions.IDLE ) {
-            this.interactionCallback({ type: "pan", data: action });
+            this.interactionCallback({ type: CanvasActions.CAMERA_PAN, data: action });
         }
     }
 
@@ -166,6 +191,8 @@ export default class GameRenderer extends sprite {
        this.viewport.left = Math.round((( renderedMap.width / 2 ) + horPosition( x, y )) - this.mapCenterX );
        this.viewport.top  = Math.round( verPosition( x, y ) - this.mapCenterY );
 
+       // 1. draw cached background
+
         ctx.drawImage(
             renderedMap,
             this.viewport.left, this.viewport.top,
@@ -174,10 +201,27 @@ export default class GameRenderer extends sprite {
             this.viewport.width, this.viewport.height,
         );
 
-        // TODO check if in valid range (not Infinity)
+        // 2. draw cursor position
 
-        if ( this.hoverTile.x !== Infinity ) {
-            const point = this.tileToLocal( this.hoverTile.x, this.hoverTile.y );
+        if ( this.placeMode !== undefined ) {
+            // 2.1 placemode is active, show placeable building outline
+            const { width, height } = this.placeMode;
+            const canPlace = this.canPlace();
+            for ( let x = 0; x < width; ++x ) {
+                for ( let y = 0; y < height; ++y ) {
+                    const point = this.tileToLocal( this.pointerPos.x + x, this.pointerPos.y + y );
+                    ctx.drawImage(
+                        CURSORS,
+                        canPlace ? 0 : 128, 0,
+                        128, 128,
+                        point.x, point.y,
+                        128, 128
+                    );
+                }
+            }
+        } else if ( this.pointerPos.x !== Infinity ) {
+            // 2.2 show regular pointer cursor
+            const point = this.tileToLocal( this.pointerPos.x, this.pointerPos.y );
             ctx.drawImage(
                 CURSORS,
                 0, 0, 128, 128,
@@ -186,16 +230,22 @@ export default class GameRenderer extends sprite {
             );
         }
 
+        // 3. draw Actors
+
+        const { width, height } = this.viewport;
+
         for ( const actor: Actor of this.actors ) {
-            // TODO cache these points for immobile actors
+            // TODO cache these points for immobile actors?
             const point = this.tileToLocal( actor.x, actor.y );
-            if ( point.x >= 0 && point.x <= this.viewport.width && point.y >= 0 && point.y <= this.viewport.height ) {
+            if ( point.x >= 0 && point.x <= width && point.y >= 0 && point.y <= height ) {
                 ctx.fillStyle = "yellow";
                 const w = 64;
                 // TODO: use zCanvas draw-safe method
                 ctx.fillRect( point.x + w / 2, point.y - w / 2, w, w );
             }
         }
+
+        // 4. correct perspective by rendering tall tiles in front of Actors when appropriate
 
         if ( true )return
 
@@ -220,7 +270,7 @@ export default class GameRenderer extends sprite {
                         spriteX = 128;
                         break;
                 }
-                const hover = this.hoverTile.x === x && this.hoverTile.y === y;
+                const hover = this.pointerPos.x === x && this.pointerPos.y === y;
                 ctx.globalCompositeOperation = hover ? "destination-out" : "source-over";
 
                 ctx.save();
@@ -273,5 +323,22 @@ export default class GameRenderer extends sprite {
             x: renderedMap.width * 0.5 + ( horPosition( x, y ) - TILE_WIDTH_HALF ) - this.viewport.left,
             y: ( TILE_HEIGHT_HALF + ( verPosition( x, y ) - TILE_HEIGHT_HALF ) - this.viewport.top )// - ( i * TILE_HEIGHT_HALF ))
         };
+    }
+
+    /**
+     * Asserts whether we can place the currently placeable
+     * Object at the current hover coordinates
+     */
+    private canPlace(): boolean {
+        // TODO: can we more efficiently get / cache all actors currently within visible range ?
+        for ( let x = this.pointerPos.x, xl = x + this.placeMode.width; x < xl; ++x ) {
+            for ( let y = this.pointerPos.y, yl = y + this.placeMode.height; y < yl; ++y ) {
+                if ( this.world.terrain[ coordinateToIndex( x, y, this.world )].type !== TileTypes.ROCK ||
+                     this.actors.find( actor => actor.x === x && actor.y === y )) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 };

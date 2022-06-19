@@ -56,6 +56,7 @@ type GameActions = {
     setGameTime( valueInMs: number ): void;
     advanceGameTime( valueInMs: number ): void;
     setLastRender( timestamp: number ): void;
+    addActor( actor: Actor ): void;
     addEffect( effect: Effect ): void;
     removeEffect( effect: Effect ): void;
     removeEffectsByAction( actions?: string[] | string ): void;
@@ -104,6 +105,9 @@ export const useGameStore = defineStore<string, GameState, GameGetters, GameActi
         },
         setLastRender( timestamp: number ): void {
             this.lastRender = timestamp;
+        },
+        addActor( actor: Actor ): void {
+            this.actors.push( actor );
         },
         addEffect( effect: Effect ): void {
             if ( !this.effects.includes( effect )) {
