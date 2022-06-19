@@ -30,6 +30,7 @@ import {
     TileTypes, TILE_SIZE, TILE_WIDTH_HALF, TILE_HEIGHT_HALF,
     horPosition, verPosition, amountOfTilesInWidth, amountOfTilesInHeight
 } from "@/definitions/world-tiles";
+import { sortByDepth } from "@/utils/render-util";
 import { coordinateToIndex } from "@/utils/terrain-util";
 import DirectionBox from "@/model/math/direction-box";
 import CACHE from "./render-cache";
@@ -37,6 +38,8 @@ import { renderBuilding } from "./building-renderer";
 
 const { CURSORS, TILES } = CACHE.sprites;
 const renderedMap = CACHE.map.isometric;
+const sortedActors: Actor[] = [];
+const pointCache: Point[] = [];
 
 const POINTER_HIT_AREA = 50;
 
@@ -233,7 +236,10 @@ export default class GameRenderer extends sprite {
             );
         }
 
-        // 3. draw Actors
+        // 3. draw Actors, back to front
+
+        sortedActors.length = 0;
+        pointCache.length = 0;
 
         const { width, height } = this.viewport;
 
@@ -241,14 +247,21 @@ export default class GameRenderer extends sprite {
             // TODO cache these points for immobile actors?
             const point = this.tileToLocal( actor.x, actor.y );
             if ( point.x >= 0 && point.x <= width && point.y >= 0 && point.y <= height ) {
-                if ( actor.type === ActorType.UNIT ) {
-                    ctx.fillStyle = "yellow";
-                    const w = 64;
-                    // TODO: use zCanvas draw-safe method
-                    ctx.fillRect( point.x + w / 2, point.y - w / 2, w, w );
-                } else if ( actor.type === ActorType.BUILDING ) {
-                    renderBuilding( ctx, renderedMap.width * 0.5, this.viewport, actor );
-                }
+                sortedActors.push( actor );
+                pointCache[ actor.id ] = point;
+            }
+        }
+        sortByDepth( sortedActors );
+
+        for ( const actor: Actor of sortedActors ) {
+            if ( actor.type === ActorType.UNIT ) {
+                const point = pointCache[ actor.id ];
+                ctx.fillStyle = "yellow";
+                const w = 64;
+                // TODO: use zCanvas draw-safe method
+                ctx.fillRect( point.x + w / 2, point.y - w / 2, w, w );
+            } else if ( actor.type === ActorType.BUILDING ) {
+                renderBuilding( ctx, renderedMap.width * 0.5, this.viewport, actor );
             }
         }
 
