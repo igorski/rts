@@ -22,31 +22,46 @@
  */
 <template>
     <div class="base-control">
-        <div class="base-control__buildings">
-            <div
-                v-for="(building, index) in buildings"
-                :key="`building_${index}`"
-                :class="{ 'base-control__buildings__entry--selected': selectedBuilding === building }"
-                class="base-control__buildings__entry"
-                @click="selectedBuilding = building"
-            >
-                {{ building.name }} {{ building.cost }}
-            </div>
+        <div class="base-control__actions">
+            <button
+                v-t="'buildings'"
+                type="button"
+                class="base-control__actions__button"
+                :class="{ 'base-control__actions__button--active': mode === 0 }"
+                @click="mode = 0"
+            ></button>
+            <button
+                v-t="'units'"
+                type="button"
+                class="base-control__actions__button"
+                :class="{ 'base-control__actions__button--active': mode === 1 }"
+                @click="mode = 1"
+            ></button>
+        </div>
+        <div class="base-control__items">
+            <building-construction-window
+                v-if="mode === 0"
+                v-model="selectedBuilding"
+            />
+            <unit-construction-window
+                v-if="mode === 1"
+                v-model="selectedUnit"
+            />
         </div>
         <div class="base-control__actions">
             <button
                 v-t="'buy'"
                 type="button"
                 class="base-control__actions__button"
-                :disabled="!selectedBuilding || selectedBuilding.cost > credits"
-                @click="buyBuilding()"
+                :disabled="!canBuy"
+                @click="buyItem()"
             ></button>
             <button
                 v-t="'sell'"
                 type="button"
                 class="base-control__actions__button"
                 :disabled="!canSell"
-                @click="sellBuilding()"
+                @click="sellItem()"
             ></button>
         </div>
     </div>
@@ -55,20 +70,28 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import { mapState, mapActions } from "pinia";
-import { ActorType, getBuildingMappings } from "@/definitions/actors";
+import { ActorType, Unit, Building } from "@/definitions/actors";
 import { type Point } from "@/definitions/math";
+import { canBuildUnit, buildUnitForBuilding } from "@/model/actions/unit-actions";
 import ActorFactory from "@/model/factories/actor-factory";
 import { useActionStore } from "@/stores/action";
 import { useGameStore } from "@/stores/game";
 import { usePlayerStore } from "@/stores/player";
+import BuildingConstructionWindow from "./components/building-construction-window.vue";
+import UnitConstructionWindow from "./components/unit-construction-window.vue";
 
 import messages from "./messages.json";
 
 export default defineComponent({
     i18n: { messages },
+    components: {
+        BuildingConstructionWindow,
+        UnitConstructionWindow,
+    },
     data: () => ({
-        buildings: getBuildingMappings(),
         selectedBuilding: undefined,
+        selectedUnit: undefined,
+        mode: 0,
     }),
     computed: {
         ...mapState( useActionStore, [
@@ -77,8 +100,32 @@ export default defineComponent({
         ...mapState( usePlayerStore, [
             "credits",
         ]),
+        ...mapState( useGameStore, [
+            "buildings",
+        ]),
+        canBuy(): boolean {
+            let cost = Infinity;
+            switch ( this.mode ) {
+                default:
+                    break;
+                case 0:
+                    if ( !this.selectedBuilding ) {
+                        return false;
+                    }
+                    cost = this.selectedBuilding.cost;
+                    break;
+                case 1:
+                    if ( !this.selectedUnit || !canBuildUnit( this.selectedUnit, this.buildings )) {
+                        return false;
+                    }
+                    cost = this.selectedUnit.cost;
+                    break;
+            }
+            return cost <= this.credits;
+
+        },
         canSell(): boolean {
-            if ( this.selectedBuilding ) {
+            if ( this.mode === 0 && this.selectedBuilding ) {
                 // TODO : check if player owns buildings of this type
             }
             return false;
@@ -108,10 +155,16 @@ export default defineComponent({
         ...mapActions( usePlayerStore, [
             "deductCredits",
         ]),
-        buyBuilding(): void {
-            this.placeBuilding( this.selectedBuilding );
+        buyItem(): void {
+            if ( this.mode === 0 ) {
+                this.placeBuilding( this.selectedBuilding );
+            } else if ( this.mode === 1 ) {
+                this.deductCredits( this.selectedUnit.cost );
+                const building = this.buildings.find(({ subClass }) => subClass === Building.REFINERY );
+                this.addActor( buildUnitForBuilding( this.selectedUnit.type, building ));
+            }
         },
-        sellBuilding(): void {
+        sellItem(): void {
 
         },
     },
@@ -128,24 +181,10 @@ export default defineComponent({
     overflow: hidden;
     margin-bottom: $spacing-medium;
 
-    &__buildings {
+    &__items {
         overflow-x: hidden;
         overflow-y: auto;
         max-height: 200px;
-
-        &__entry {
-            cursor: pointer;
-            padding: $spacing-small;
-
-            &:hover {
-                background-color: rgba(255,255,255,0.5);
-                text-indent: $spacing-small;
-            }
-
-            &--selected {
-                font-weight: bold;
-            }
-        }
     }
 
     &__actions {
@@ -154,6 +193,11 @@ export default defineComponent({
 
         &__button {
             flex: 1;
+            border: none;
+
+            &--active {
+                background-color: yellow;
+            }
         }
     }
 }

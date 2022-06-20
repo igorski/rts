@@ -6,7 +6,8 @@
             "defenseTurret": "Defense turret"
         },
         "unit": {
-            "scout": "Scout"
+            "scout": "Scout",
+            "harvester": "Harvester"
         }
     }
 }

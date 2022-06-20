@@ -43,10 +43,12 @@ export type BuildingMapping = {
 
 export enum Unit {
     SCOUT,
+    HARVESTER,
 };
 
-type UnitMapping = {
+export type UnitMapping = {
     type: Unit | string;
+    cost: number;
     name: string;
 };
 
@@ -96,6 +98,7 @@ export const getUnitMappings = (): UnitMapping[] => {
     return Object.values( Unit )
         .filter( value => typeof value === "number" )
         .map( type => {
+            let cost = 50;
             let name = "";
             switch ( type ) {
                 default:
@@ -106,7 +109,11 @@ export const getUnitMappings = (): UnitMapping[] => {
                 case Unit.SCOUT:
                     name = "scout";
                     break;
+                case Unit.HARVESTER:
+                    name = "harvester";
+                    cost = 150;
+                    break;
             }
-            return { type, name: useI18n().t( `unit.${name}` )};
+            return { type, cost, name: useI18n().t( `unit.${name}` )};
         });
 };

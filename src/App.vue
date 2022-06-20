@@ -23,7 +23,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { storeToRefs } from "pinia";
-import BaseControl from "./components/base-control/base-control.vue";
+import ConstructionWindow from "./components/construction-window/construction-window.vue";
 import DialogWindow from "./components/dialog-window/dialog-window.vue";
 import GameCanvas from "./components/game-canvas/game-canvas.vue";
 import HeaderMenu from "./components/header-menu/header-menu.vue";
@@ -57,7 +57,7 @@ if ( hasSavedGame.value ) {
         <template v-else>
             <game-canvas />
             <div class="game-ui">
-                <base-control />
+                <construction-window />
                 <world-map />
             </div>
         </template>
