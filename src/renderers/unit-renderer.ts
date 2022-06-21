@@ -21,27 +21,13 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 import type { Actor } from "@/definitions/actors;"
-import type { Rectangle } from "@/definitions/math";
-import { TILE_SIZE, TILE_WIDTH_HALF, TILE_HEIGHT_HALF, horPosition, verPosition } from "@/definitions/world-tiles";
-import CACHE from "./render-cache";
+import type { Point } from "@/definitions/math";
 
-const { TILES } = CACHE.sprites;
-
-export const renderBuilding = ( ctx: CanvasRenderingContext2D, halfWidth: number, viewport: Rectangle, building: Actor ): void =>
+export const renderUnit = ( ctx: CanvasRenderingContext2D, point: Point, unit: Actor ): void =>
 {
-    const { left, top } = viewport;
-
-    for ( let x = building.x, xl = x + building.width; x < xl; ++x ) {
-        for ( let y = building.y, yl = y + building.height; y < yl; ++y ) {
-            const destX = ( halfWidth + ( horPosition( x - 1, y - 1 ) - TILE_WIDTH_HALF )) - left;
-            const destY = ( TILE_HEIGHT_HALF + ( verPosition( x - 1, y - 1) - TILE_HEIGHT_HALF )) - top;
-            // TODO get building height
-            for ( let h = 0; h < 2; ++h ) {
-                ctx.drawImage(
-                    TILES, 384, 0, TILE_SIZE, TILE_SIZE,
-                    destX, destY - ( h * TILE_HEIGHT_HALF ), TILE_SIZE, TILE_SIZE
-                );
-            }
-        }
-    }
+    // TODO: nothing too exciting yet
+    ctx.fillStyle = "yellow";
+    const w = 64;
+    // TODO: use zCanvas draw-safe method
+    ctx.fillRect( point.x + w / 2, point.y - w / 2, w, w );
 };

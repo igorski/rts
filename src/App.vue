@@ -32,6 +32,8 @@ import WorldMap from "./components/world-map/world-map.vue";
 import { useGameStore } from "./stores/game";
 import { useStorageStore } from "./stores/storage";
 import { useSystemStore } from "./stores/system";
+import { initCache } from "@/renderers/render-cache";
+import { renderWorldMap } from "@/renderers/map-renderer";
 
 const storageStore = useStorageStore();
 
@@ -39,14 +41,16 @@ const { hasSavedGame } = storeToRefs( storageStore );
 const { dialog } = storeToRefs( useSystemStore() );
 const loading = ref( true );
 
+async function onGameLoad(): Promise<void> {
+    await initCache();
+    renderWorldMap( useGameStore().world );
+    loading.value = false;
+}
+
 if ( hasSavedGame.value ) {
-    storageStore.loadGame().then(() => {
-        loading.value = false;
-    });
+    storageStore.loadGame().then( onGameLoad );
 } else {
-    useGameStore().init().then(() => {
-        loading.value = false;
-    });
+    useGameStore().init().then( onGameLoad );
 }
 </script>
 

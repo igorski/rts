@@ -35,11 +35,13 @@ import { coordinateToIndex } from "@/utils/terrain-util";
 import DirectionBox from "@/model/math/direction-box";
 import CACHE from "./render-cache";
 import { renderBuilding } from "./building-renderer";
+import { renderUnit } from "./unit-renderer";
 
 const { CURSORS, TILES } = CACHE.sprites;
 const renderedMap = CACHE.map.isometric;
 const sortedActors: Actor[] = [];
 const pointCache: Point[] = [];
+let halfMap: number = 0;
 
 const POINTER_HIT_AREA = 50;
 
@@ -66,6 +68,10 @@ export default class GameRenderer extends sprite {
     private scale: number = 1;
     private interactionCallback: Function;
     private placeMode: Size | undefined;
+    private visibleActors: Actor[] = [];
+    private lastX: number = 0;
+    private lastY: number = 0;
+    private lastActorAmount: number = 0;
 
     // visible map area
     private viewport: Rectangle = { left: 0, top: 0, width: 0, height: 0 };
@@ -96,6 +102,12 @@ export default class GameRenderer extends sprite {
 
         this.setWidth( width * x );
         this.setHeight( height * y );
+
+        halfMap = renderedMap.width / 2;
+
+        // invalidates viewport cache (see update())
+        this.lastX = 0;
+        this.lastY = 0;
 
         this.viewport.width  = this.canvas.getWidth();
         this.viewport.height = this.canvas.getHeight();
@@ -170,7 +182,7 @@ export default class GameRenderer extends sprite {
                     return this.interactionCallback({ type: CanvasActions.OBJECT_PLACE, data: this.pointerPos });
                 }
 
-                const actor = this.actors.find(({ x, y }) => x === this.pointerPos.x && y === this.pointerPos.y );
+                const actor = this.visibleActors.find(({ x, y }) => x === this.pointerPos.x && y === this.pointerPos.y );
                 if ( actor ) {
                     this.interactionCallback({ type: CanvasActions.ACTOR_SELECT, data: actor });
                 } else {
@@ -187,17 +199,39 @@ export default class GameRenderer extends sprite {
         if ( action !== CameraActions.IDLE ) {
             this.interactionCallback({ type: CanvasActions.CAMERA_PAN, data: action });
         }
+
+        // keep the viewport in sync with camera movements
+
+        const { x, y } = this.world;
+        let panned = false;
+
+        if ( this.lastX !== x || this.lastY !== y ) {
+            this.lastX = x;
+            this.lastY = y;
+
+            this.viewport.left = Math.round((( halfMap ) + horPosition( x, y )) - this.mapCenterX );
+            this.viewport.top  = Math.round( verPosition( x, y ) - this.mapCenterY );
+
+            panned = true;
+        }
+
+        // calculate the visible actor list on updated viewport or actor amount
+        // TODO: can we also take into account the Actors that can move ?
+
+        if ( panned || this.lastActorAmount !== this.actors.length ) {
+            this.lastActorAmount = this.actors.length;
+            /**
+             * TODO within visible area calculations ? (happens in draw() anyways...)
+             * but need to solve issue with movable actors first. perhaps split in buildings and units.
+             */
+             //this.visibleActors.length = 0;
+             this.visibleActors = this.actors;
+        }
     }
 
     draw( ctx: CanvasRenderingContext2D ): void {
-        const x = this.world.x;
-        const y = this.world.y;
 
-        // TODO: calculate this on camera pan action update
-       this.viewport.left = Math.round((( renderedMap.width / 2 ) + horPosition( x, y )) - this.mapCenterX );
-       this.viewport.top  = Math.round( verPosition( x, y ) - this.mapCenterY );
-
-       // 1. draw cached background
+        // 1. draw cached background
 
         ctx.drawImage(
             renderedMap,
@@ -243,8 +277,8 @@ export default class GameRenderer extends sprite {
 
         const { width, height } = this.viewport;
 
-        for ( const actor: Actor of this.actors ) {
-            // TODO cache these points for immobile actors?
+        for ( const actor: Actor of this.visibleActors ) {
+            // TODO cache these points for immobile actors
             const point = this.tileToLocal( actor.x, actor.y );
             if ( point.x >= 0 && point.x <= width && point.y >= 0 && point.y <= height ) {
                 sortedActors.push( actor );
@@ -256,60 +290,9 @@ export default class GameRenderer extends sprite {
         for ( const actor: Actor of sortedActors ) {
             if ( actor.type === ActorType.UNIT ) {
                 const point = pointCache[ actor.id ];
-                ctx.fillStyle = "yellow";
-                const w = 64;
-                // TODO: use zCanvas draw-safe method
-                ctx.fillRect( point.x + w / 2, point.y - w / 2, w, w );
+                renderUnit( ctx, point, actor );
             } else if ( actor.type === ActorType.BUILDING ) {
-                renderBuilding( ctx, renderedMap.width * 0.5, this.viewport, actor );
-            }
-        }
-
-        // 4. correct perspective by rendering tall tiles in front of Actors when appropriate
-
-        if ( true )return
-
-        // TODO we need to know what the visible range of tiles is
-        // TODO : can we roll this into a single loop ?
-
-        for ( let tx = this.viewport.left; tx < this.viewport.left + this.viewport.width; ++tx ) {
-           for ( let ty = this.viewport.top; ty < this.viewport.top + this.viewport.height; ++ty ) {
-                const { x, y, height, type } = this.world.terrain[ coordinateToIndex( tx, ty, this.world ) ];
-                let spriteX = 0;
-                switch ( type ) {
-                    default:
-                        break;
-                    case TileTypes.GROUND:
-                    case TileTypes.SAND:
-                        spriteX = 256;
-                        break;
-                    case TileTypes.WATER:
-                        spriteX = 384;
-                        break;
-                    case TileTypes.MOUNTAIN:
-                        spriteX = 128;
-                        break;
-                }
-                const hover = this.pointerPos.x === x && this.pointerPos.y === y;
-                ctx.globalCompositeOperation = hover ? "destination-out" : "source-over";
-
-                ctx.save();
-                ctx.translate( this.mapCenterX, this.mapCenterY );
-
-                for ( let i = 0; i < height; ++i ) {
-                    ctx.drawImage(
-                        TILES,
-                        spriteX,
-                        i === 0 ? 0 : TILE_SIZE,
-                        TILE_SIZE,
-                        TILE_SIZE,
-                        horPosition( x, y ) - TILE_WIDTH_HALF,
-                        ( verPosition( x, y ) - TILE_HEIGHT_HALF ) - ( i * TILE_HEIGHT_HALF ),
-                        TILE_SIZE,
-                        TILE_SIZE
-                    );
-                }
-                ctx.restore();
+                renderBuilding( ctx, halfMap, this.viewport, actor );
             }
         }
     }
@@ -340,8 +323,8 @@ export default class GameRenderer extends sprite {
      */
     private tileToLocal( x: number, y: number ): Point {
         return {
-            x: renderedMap.width * 0.5 + ( horPosition( x, y ) - TILE_WIDTH_HALF ) - this.viewport.left,
-            y: ( TILE_HEIGHT_HALF + ( verPosition( x, y ) - TILE_HEIGHT_HALF ) - this.viewport.top )// - ( i * TILE_HEIGHT_HALF ))
+            x: halfMap + ( horPosition( x, y ) - TILE_WIDTH_HALF ) - this.viewport.left,
+            y: ( TILE_HEIGHT_HALF + ( verPosition( x, y ) - TILE_HEIGHT_HALF ) - this.viewport.top )
         };
     }
 
@@ -350,11 +333,10 @@ export default class GameRenderer extends sprite {
      * Object at the current hover coordinates
      */
     private canPlace(): boolean {
-        // TODO: can we more efficiently get / cache all actors currently within visible range ?
         for ( let x = this.pointerPos.x, xl = x + this.placeMode.width; x < xl; ++x ) {
             for ( let y = this.pointerPos.y, yl = y + this.placeMode.height; y < yl; ++y ) {
                 if ( this.world.terrain[ coordinateToIndex( x, y, this.world )].type !== TileTypes.ROCK ||
-                     this.actors.find( actor => actor.x === x && actor.y === y )) {
+                    this.visibleActors.find( actor => actor.x === x && actor.y === y )) {
                     return false;
                 }
             }

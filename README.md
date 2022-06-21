@@ -4,7 +4,9 @@ A WIP browser based real time strategy game in the vein of 90's classics such as
 
 ## Game model
 
-The game is written in TypeScript using Vue 3 with Pinia.
+The game is written in TypeScript using Vue 3 with Pinia. The game sprite rendering is
+done using igorski's [zCanvas library](https://www.github.com/igorski/zcanvas) with Vue
+handling the UI overlays.
 
 All the game's actors and properties are Object structures inside Pinia store states making
 these reactive.

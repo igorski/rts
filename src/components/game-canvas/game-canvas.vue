@@ -38,7 +38,6 @@ import type { EnvironmentDef, TileDef } from "@/definitions/world-tiles";
 import { CameraActions } from "@/definitions/camera-actions";
 import { TILE_SIZE } from "@/definitions/world-tiles";
 import { Actor } from "@/model/factories/actor-factory";
-import { initCache } from "@/renderers/render-cache";
 import { renderWorldMap } from "@/renderers/map-renderer";
 import GameRenderer, { CanvasActions } from "@/renderers/game-renderer";
 import WorldMap from "@/components/world-map/world-map.vue";
@@ -94,10 +93,14 @@ export default defineComponent({
         this.buildingMappings = getBuildingMappings();
         this.unitMappings = getUnitMappings();
 
-        /**
-         * Construct zCanvas instance to render the game world. The zCanvas
-         * also maintains the game loop that will update the world prior to each render cycle.
-         */
+        // 1. prepare game renderer
+
+        renderer = new GameRenderer( this.handleRendererInteractions.bind( this ));
+        renderer.setWorld( this.world, this.gameActors );
+
+        // 2. Construct zCanvas instance to render the game world. The zCanvas
+        // also maintains the game loop that will update the world prior to each render cycle.
+
         zCanvasInstance = new canvas({
             width: window.innerWidth,
             height: window.innerHeight,
@@ -107,11 +110,6 @@ export default defineComponent({
             onUpdate: this.updateGame.bind( this ),
             backgroundColor: "#0000FF"
         });
-        renderer = new GameRenderer( this.handleRendererInteractions.bind( this ));
-
-        // render world map
-        await initCache();
-        renderWorldMap( this.world );
 
         // attach event handlers
         const resizeEvent = "onorientationchange" in window ? "orientationchange" : "resize";
@@ -124,7 +122,6 @@ export default defineComponent({
         zCanvasInstance.insertInPage( this.$refs.canvasContainer as HTMLElement );
         zCanvasInstance.addChild( renderer );
 
-        renderer.setWorld( this.world, this.gameActors );
         this.handleResize();
 
         // keyboard control : todo put somewhere else
@@ -175,7 +172,7 @@ export default defineComponent({
             zCanvasInstance.scale( clientWidth / tilesInWidth, clientHeight / tilesInHeight );
             renderer.setWorldSize( tilesInWidth, tilesInHeight );
         },
-        updateGame( timestamp: number ): void {
+        updateGame( timestamp: number, framesSinceLastUpdate: number ): void {
             this.update( timestamp );
             renderer.update();
         },
