@@ -20,7 +20,7 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-import { useI18n } from "vue-i18n";
+import { i18n } from "@/i18n";
 
 export enum ActorType {
     BUILDING,
@@ -50,6 +50,8 @@ export type UnitMapping = {
     type: Unit | string;
     cost: number;
     name: string;
+    width: number;
+    height: number;
 };
 
 export enum Owner {
@@ -90,7 +92,7 @@ export const getBuildingMappings = (): BuildingMapping[] => {
                 break;
 
         }
-        return { type, cost, name: useI18n().t( `building.${name}` ), width, height };
+        return { type, cost, name: i18n.t( `building.${name}` ), width, height };
     });
 };
 
@@ -100,6 +102,8 @@ export const getUnitMappings = (): UnitMapping[] => {
         .map( type => {
             let cost = 50;
             let name = "";
+            let width = 1;
+            let height = 1;
             switch ( type ) {
                 default:
                     if ( process.env.NODE_ENV !== "production" ) {
@@ -111,9 +115,9 @@ export const getUnitMappings = (): UnitMapping[] => {
                     break;
                 case Unit.HARVESTER:
                     name = "harvester";
-                    cost = 150;
+                    cost = 750;
                     break;
             }
-            return { type, cost, name: useI18n().t( `unit.${name}` )};
+            return { type, cost, name: i18n.t( `unit.${name}` ), width, height };
         });
 };

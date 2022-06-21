@@ -3,6 +3,7 @@
         "buildings": "Buildings",
         "units": "Units / Vehicles",
         "buy": "Buy",
-        "sell": "Sell"
+        "sell": "Sell",
+        "building": "Building..."
     }
 }

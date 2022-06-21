@@ -78,7 +78,8 @@ export default defineComponent({
         buildings( value: Actor[], oldValue: Actor[] = [] ): void {
             if ( value.length !== oldValue.length ) {
                 // TODO: stamp buildings onto pristine background-only map to speed up proceedings
-                renderWorldMap( this.world, value );
+                // AND ONLY WHEN completion = 1
+                //renderWorldMap( this.world, value );
             }
         },
         placableBuilding( value: BuildingMapping | undefined ): void {

@@ -70,13 +70,15 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import { mapState, mapActions } from "pinia";
-import { ActorType, Unit, Building } from "@/definitions/actors";
+import { ActorType, Unit, Building, Owner } from "@/definitions/actors";
 import { type Point } from "@/definitions/math";
 import { canBuildUnit, buildUnitForBuilding } from "@/model/actions/unit-actions";
 import ActorFactory from "@/model/factories/actor-factory";
-import { useActionStore } from "@/stores/action";
+import EffectFactory from "@/model/factories/effect-factory";
+import { ACTION_STORE_NAME, useActionStore } from "@/stores/action";
 import { useGameStore } from "@/stores/game";
 import { usePlayerStore } from "@/stores/player";
+import { useSystemStore } from "@/stores/system";
 import BuildingConstructionWindow from "./components/building-construction-window.vue";
 import UnitConstructionWindow from "./components/unit-construction-window.vue";
 
@@ -102,6 +104,7 @@ export default defineComponent({
         ]),
         ...mapState( useGameStore, [
             "buildings",
+            "gameTime",
         ]),
         canBuy(): boolean {
             let cost = Infinity;
@@ -137,11 +140,20 @@ export default defineComponent({
                 return;
             }
             this.deductCredits( this.selectedBuilding.cost );
-            this.addActor( ActorFactory.create({
-                type: ActorType.BUILDING, subClass: this.selectedBuilding.type,
+            const buildingActor = ActorFactory.create({
+                type: ActorType.BUILDING,
+                subClass: this.selectedBuilding.type,
+                owner: Owner.PLAYER,
                 x: position.x, y: position.y,
                 width: this.selectedBuilding.width, height: this.selectedBuilding.height
+            });
+            this.addActor( buildingActor );
+            // TODO: size of building determines duration
+            this.addEffect( EffectFactory.create({
+                store: ACTION_STORE_NAME, start: this.gameTime, duration: 5000,
+                from: 0, to: 1, action: "updateBuildingStep", target: buildingActor.id
             }));
+            this.showNotification( this.$t( "building" ));
             this.placeBuilding( undefined );
         },
     },
@@ -151,9 +163,13 @@ export default defineComponent({
         ]),
         ...mapActions( useGameStore, [
             "addActor",
+            "addEffect",
         ]),
         ...mapActions( usePlayerStore, [
             "deductCredits",
+        ]),
+        ...mapActions( useSystemStore, [
+            "showNotification",
         ]),
         buyItem(): void {
             if ( this.mode === 0 ) {
@@ -161,7 +177,7 @@ export default defineComponent({
             } else if ( this.mode === 1 ) {
                 this.deductCredits( this.selectedUnit.cost );
                 const building = this.buildings.find(({ subClass }) => subClass === Building.REFINERY );
-                this.addActor( buildUnitForBuilding( this.selectedUnit.type, building ));
+                this.addActor( buildUnitForBuilding( this.selectedUnit.type, building, Owner.PLAYER ));
             }
         },
         sellItem(): void {

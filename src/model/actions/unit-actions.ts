@@ -20,11 +20,12 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-import { ActorType, Unit, Building } from "@/definitions/actors";
+import type { UnitMapping } from "@/definitions/actors";
+import { ActorType, Unit, Building, Owner, getUnitMappings } from "@/definitions/actors";
 import type { Actor } from "@/model/factories/actor-factory";
 import ActorFactory from "@/model/factories/actor-factory";
 
-export const canBuildUnit = ( unit: Unit, buildings: Building[] ): boolean => {
+export const canBuildUnit = ( unit: UnitMapping, buildings: Actor[] ): boolean => {
     switch ( unit.type ) {
         default:
             return false;
@@ -42,13 +43,33 @@ export const canBuildUnit = ( unit: Unit, buildings: Building[] ): boolean => {
     return true;
 };
 
-export const buildUnitForBuilding = ( unit: Unit, building: Building ): Actor => {
+/**
+ * Returns the unit associated with a building (for instance a
+ * refinery comes with a free harvester), can be undefined.
+ */
+export const unitForBuilding = ( building: Actor ): UnitMapping | undefined => {
+    let type: Unit;
+    switch ( building.subClass ) {
+        default:
+            return undefined;
+        case Building.REFINERY:
+            type = Unit.HARVESTER;
+            break;
+    }
+    return getUnitMappings().find( unit => type === unit.type );
+};
+
+/**
+ * Creates a Unit Actor associated with a Building Actor
+ */
+export const buildUnitForBuilding = ( unit: UnitMapping, building: Actor, owner: Owner = Owner.AI ): Actor => {
     const x = building.x + building.width;
     const y = building.y + building.height;
 
     return ActorFactory.create({
         type: ActorType.UNIT,
-        subClass: unit,
+        subClass: unit.type as Unit,
+        owner,
         x, y,
         width: unit.width,
         height: unit.height

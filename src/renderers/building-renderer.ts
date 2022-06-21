@@ -22,14 +22,21 @@
  */
 import type { Actor } from "@/definitions/actors;"
 import type { Rectangle } from "@/definitions/math";
-import { TILE_SIZE, TILE_WIDTH_HALF, TILE_HEIGHT_HALF, horPosition, verPosition } from "@/definitions/world-tiles";
+import { TILE_SIZE, TILE_WIDTH_HALF, horPosition, verPosition } from "@/definitions/world-tiles";
 import CACHE from "./render-cache";
 
 const { TILES } = CACHE.sprites;
 
 export const renderBuilding = ( ctx: CanvasRenderingContext2D, halfWidth: number, viewport: Rectangle, building: Actor ): void =>
 {
-    const { left, top } = viewport;
+    const { left, top }  = viewport;
+    const { completion } = building;
+
+    // tile height is animated duration building phase
+
+    const TILE_HEIGHT       = TILE_SIZE * completion;
+    const TILE_HEIGHT_HALF  = TILE_HEIGHT * 0.5;
+    const SIZE_MINUS_HEIGHT = TILE_SIZE - TILE_HEIGHT;
 
     for ( let x = building.x, xl = x + building.width; x < xl; ++x ) {
         for ( let y = building.y, yl = y + building.height; y < yl; ++y ) {
@@ -39,7 +46,8 @@ export const renderBuilding = ( ctx: CanvasRenderingContext2D, halfWidth: number
             for ( let h = 0; h < 2; ++h ) {
                 ctx.drawImage(
                     TILES, 384, 0, TILE_SIZE, TILE_SIZE,
-                    destX, destY - ( h * TILE_HEIGHT_HALF ), TILE_SIZE, TILE_SIZE
+                    destX, ( destY - ( h * TILE_HEIGHT_HALF )) + SIZE_MINUS_HEIGHT,
+                    TILE_SIZE, TILE_HEIGHT
                 );
             }
         }

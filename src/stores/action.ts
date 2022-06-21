@@ -21,9 +21,12 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 import { defineStore } from "pinia";
+import { i18n } from "@/i18n";
 import type { BuildingMapping } from "@/definitions/actors";
+import { Building, Owner } from "@/definitions/actors";
 import type { Point } from "@/definitions/math";
 import { TileTypes } from "@/definitions/world-tiles";
+import { unitForBuilding, buildUnitForBuilding } from "@/model/actions/unit-actions";
 import type { Actor } from "@/model/factories/actor-factory";
 import EffectFactory, { type Effect } from "@/model/factories/effect-factory";
 import { findPath } from "@/utils/path-finder";
@@ -52,6 +55,7 @@ type ActionGetters = {
 type ActionActions = {
     placeBuilding( building: BuildingMapping ): void;
     completePlacement( position: Point ): void;
+    updateBuildingStep( action: ActorAction ): void;
     setSelection( actors: Actor[] ): void;
     assignTarget( targetX: number, targetY: number ): void;
     setActorX( action: ActorAction ): void;
@@ -75,6 +79,18 @@ export const useActionStore = defineStore<string, ActionState, ActionGetters, Ac
         },
         completePlacement( position: Point ): void {
             this.placement = position;
+        },
+        updateBuildingStep( action: ActorAction ): void {
+            const compareId = action.target;
+            actor = useGameStore().actors.find(({ id }) => id === compareId ) as Actor;
+            actor.completion = action.value;
+            if ( action.value === 1 ) {
+                const unit = unitForBuilding( actor );
+                if ( unit ) {
+                    useGameStore().addActor( buildUnitForBuilding( unit, actor, Owner.PLAYER ));
+                }
+                useSystemStore().showNotification( i18n.t( "constructionComplete" ) );
+            }
         },
         setSelection( actors: Actor[] ): void {
             this.selectedActors = actors;
