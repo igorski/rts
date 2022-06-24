@@ -21,7 +21,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 import type { ActorType, Building, Unit } from "@/definitions/actors";
-import { Owner } from "@/definitions/actors";
+import { Owner, AiActions } from "@/definitions/actors";
 import { getUid } from "@/utils/uid-util";
 
 export type Actor = {
@@ -37,7 +37,9 @@ export type Actor = {
     attack: number;
     defense: number;
     owner: Owner;
-    completion: number;
+    completion: number; // used during construction phase to determine "ready progress"
+    aiAction: AiActions; // AI action currently being executed by the Actor
+    aiValue: number; // optional payload value for the current AI action
 };
 
 export type SerializedActor = {
@@ -54,6 +56,8 @@ export type SerializedActor = {
     d: number;
     o: Owner;
     c: number;
+    aa: AiActions;
+    av: number;
 };
 
 interface ActorProps {
@@ -69,6 +73,8 @@ interface ActorProps {
     defense?: number;
     owner?: number;
     completion?: number;
+    aiAction?: AiActions;
+    aiValue?: number;
 };
 
 const ActorFactory =
@@ -76,7 +82,7 @@ const ActorFactory =
     create({
         type, subClass, x = 0, y = 0, width = 1, height = 1,
         maxEnergy = 1, energy = 1, attack = 0, defense = 0,
-        owner = Owner.AI, completion = 1,
+        owner = Owner.AI, completion = 1, aiAction = AiActions.IDLE, aiValue = 0,
     }: ActorProps ): Actor {
         return {
             id: getUid(),
@@ -87,6 +93,7 @@ const ActorFactory =
             maxEnergy, energy,
             attack, defense,
             owner, completion,
+            aiAction, aiValue,
         };
     },
 
@@ -105,6 +112,8 @@ const ActorFactory =
             d: actor.defense,
             o: actor.owner,
             c: actor.completion,
+            aa: actor.aiAction,
+            av: actor.aiValue,
         };
     },
 
@@ -122,6 +131,8 @@ const ActorFactory =
             defense: data.d,
             owner: data.o,
             completion: data.c,
+            aiAction: data.aa,
+            aiValue: data.av,
         });
         actor.id = data.i;
         return actor;

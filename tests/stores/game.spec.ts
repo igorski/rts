@@ -5,11 +5,27 @@ const effectActionsMock = {
 };
 vi.mock( "@/model/actions/effect-actions", () => effectActionsMock );
 
+const unitActionsMock = {
+    handleAI: vi.fn(() => "handleAIResult" ),
+};
+vi.mock( "@/model/actions/unit-actions", () => unitActionsMock );
+
+const mapRendererMock = {
+    renderWorldMap: vi.fn()
+};
+vi.mock( "@/renderers/map-renderer", () => mapRendererMock );
+
+
 import type { Store } from "pinia";
 import { setActivePinia, createPinia } from "pinia";
+import { AiActions } from "@/definitions/actors";
+import { TileTypes } from "@/definitions/world-tiles";
 import type { Effect } from "@/model/factories/effect-factory";
 import EffectFactory from "@/model/factories/effect-factory";
+import WorldFactory from "@/model/factories/world-factory";
 import { GameStates, useGameStore } from "@/stores/game";
+import { coordinateToIndex } from "@/utils/terrain-util";
+import { randomUnit, randomBuilding } from "../test-util";
 
 /* convenience method to quickly construct an Effect */
 
@@ -53,19 +69,65 @@ describe( "Game Pinia store", () => {
 
         it( "should be able to set the current game time", () => {
             const store = useGameStore();
+            store.gameTime = 0;
 
             const now = Date.now();
-            store.gameTime = 0;
             store.setGameTime( now );
             expect( store.gameTime ).toEqual( now );
         });
 
         it( "should be able to set the last game render time", () => {
             const store = useGameStore();
-
             store.lastRender = 0;
+
             store.setLastRender( 100 );
             expect( store.lastRender ).toEqual( 100 );
+        });
+
+        describe( "when adding Actors to the game", () => {
+            it( "should be able to add Building type Actors to the Actors list", () => {
+                const store  = useGameStore();
+                const actor1 = randomBuilding();
+                const actor2 = randomBuilding();
+                store.actors = [ actor1 ];
+
+                const spy = vi.spyOn( unitActionsMock, "handleAI" );
+                store.addActor( actor2 );
+
+                expect( store.actors ).toEqual([ actor1, actor2 ]);
+                expect( spy ).not.toHaveBeenCalled();
+            });
+
+            it( "should be able to add Unit type Actors to the Actors list and automatically invoke their AI actions", () => {
+                const store  = useGameStore();
+                const actor1 = randomBuilding();
+                const actor2 = randomUnit();
+                store.actors = [ actor1 ];
+
+                const spy = vi.spyOn( unitActionsMock, "handleAI" );
+                store.addActor( actor2 );
+
+                expect( store.actors ).toEqual([ actor1, actor2 ]);
+                expect( spy ).toHaveBeenCalledWith( actor2 );
+            });
+        });
+
+        it( "should be able to remove an Actor from the Actors list", () => {
+            const store  = useGameStore();
+            const actor1 = randomBuilding();
+            const actor2 = randomBuilding();
+            store.actors = [ actor1, actor2 ];
+
+            store.removeActor( actor1 );
+            expect( store.actors ).toEqual([ actor2 ]);
+        });
+
+        it( "should be able to set an Actors AI action type", () => {
+            const store = useGameStore();
+            const actor = randomUnit();
+
+            store.setActorAiAction( actor, AiActions.HARVESTER_HARVEST );
+            expect( actor.aiAction ).toEqual( AiActions.HARVESTER_HARVEST );
         });
 
         describe( "when adding time bound effects", () => {
@@ -239,6 +301,20 @@ describe( "Game Pinia store", () => {
                 // assert secondary effect has been requested to be removed (as its update returned true)
                 expect( spy ).toHaveBeenCalledWith( effect2 );
             });
+        });
+
+        it( "should be able to update individual tiles within the World terrain", () => {
+            const store = useGameStore();
+
+            store.world = WorldFactory.create( 8 );
+            WorldFactory.populate( store.world );
+
+            store.world.terrain[ coordinateToIndex( 4, 3, store.world ) ].type = TileTypes.GRASS;
+
+            store.updateTile( 4, 3, TileTypes.SAND );
+
+            expect( store.world.terrain[ coordinateToIndex( 4, 3, store.world ) ].type ).toEqual( TileTypes.SAND );
+            expect( mapRendererMock.renderWorldMap ).toHaveBeenCalledWith( store.world, store.gameActors );
         });
     });
 });

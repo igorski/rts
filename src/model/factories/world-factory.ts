@@ -62,8 +62,7 @@ const WorldFactory =
     /**
      * Creates a new, empty World
      */
-    create(): EnvironmentDef {
-        const size  = 8;
+    create( size: number = 100 ): EnvironmentDef {
         const world: EnvironmentDef = {
             x: size / 2,
             y: size / 2,
@@ -80,10 +79,7 @@ const WorldFactory =
      * calculated for given hash
      */
     populate( world: EnvironmentDef ): EnvironmentDef {
-        const size = 100; // amount of horizontal and vertical tiles in the world
-
-        world.width  = size;
-        world.height = size;
+        const size = world.width; // amount of horizontal and vertical tiles in the world
 
         const centerX = Math.round( world.width  / 2 );
         const centerY = Math.round( world.height / 2 );
@@ -131,7 +127,7 @@ const WorldFactory =
      * back into world structure
      */
     deserialize( data: SerializedWorld ): EnvironmentDef {
-        const world = WorldFactory.create();
+        const world = WorldFactory.create( data.w );
 
         world.x = data.x;
         world.y = data.y;

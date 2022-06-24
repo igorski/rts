@@ -1,5 +1,5 @@
 import type { Point } from "@/definitions/math";
-import type { EnvironmentDef } from "@/definitions/world-tiles";
+import type { EnvironmentDef, TileTypes } from "@/definitions/world-tiles";
 import type { Actor } from "@/model/factories/actor-factory";
 
 const { abs, max, pow, sqrt } = Math;
@@ -13,7 +13,7 @@ const { abs, max, pow, sqrt } = Math;
  * @param {number} startY the start y coordinate
  * @param {number} targetX the target x coordinate
  * @param {number} targetY the target y coordinate
- * @param {number=} maxWalkableTileNum the terrain in an environment is represented
+ * @param {TileTypes=} maxWalkableTileNum the terrain in an environment is represented
  *                  by integers defining the terrain type. This number defines which
  *                  types of terrain are deemed walkable (e.g. road, grass, mud, etc.)
  * @param {Actor[]=} buildings map of buildings to check against (cannot walk on building, right?)
@@ -21,7 +21,7 @@ const { abs, max, pow, sqrt } = Math;
  */
 export const findPath = (
     world: EnvironmentDef, startX: number, startY: number, targetX: number, targetY: number,
-    maxWalkableTileNum: number = 0, buildings: Actor[] = []
+    maxWalkableTileNum: TileTypes = 0, buildings: Actor[] = []
 ): Point[] => {
     const pathStart = [ startX,  startY  ];
     const pathEnd   = [ targetX, targetY ];

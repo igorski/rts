@@ -22,11 +22,16 @@
  */
 import { defineStore } from "pinia";
 import { ActorType } from "@/definitions/actors";
+import type { AiActions } from "@/definitions/actors";
 import type { EnvironmentDef } from "@/definitions/world-tiles";
+import type { TileTypes } from "@/definitions/world-tiles";
 import { updateEffect } from "@/model/actions/effect-actions";
+import { handleAI } from "@/model/actions/unit-actions";
 import type { Actor } from "@/model/factories/actor-factory";
 import type { Effect } from "@/model/factories/effect-factory";
 import GameFactory, { type Game } from "@/model/factories/game-factory";
+import { renderWorldMap } from "@/renderers/map-renderer";
+import { coordinateToIndex } from "@/utils/terrain-util";
 
 export const GAME_STORE_NAME = "game";
 
@@ -59,6 +64,8 @@ type GameActions = {
     advanceGameTime( valueInMs: number ): void;
     setLastRender( timestamp: number ): void;
     addActor( actor: Actor ): void;
+    removeActor( actor: Actor ): void;
+    setActorAiAction( actor: Actor, action: AiActions ): void;
     addEffect( effect: Effect ): void;
     removeEffect( effect: Effect ): void;
     removeEffectsByAction( actions?: string[] | string ): void;
@@ -66,6 +73,7 @@ type GameActions = {
     removeEffectsByTarget( target: any ): void;
     removeEffectsByTargetAndAction( target: any, actions?: string[] | string ): void;
     update( timestamp: number ): void;
+    updateTile( x: number, y: number, newType: TileTypes ): void;
 };
 
 export const useGameStore = defineStore<string, GameState, GameGetters, GameActions>( GAME_STORE_NAME, {
@@ -111,6 +119,15 @@ export const useGameStore = defineStore<string, GameState, GameGetters, GameActi
         },
         addActor( actor: Actor ): void {
             this.actors.push( actor );
+            if ( actor.type === ActorType.UNIT ) {
+                handleAI( actor );
+            }
+        },
+        removeActor( actor: Actor ): void {
+            this.actors.splice( this.actors.indexOf( actor ), 1 );
+        },
+        setActorAiAction( actor: Actor, action: AiActions ): void {
+            actor.aiAction = action;
         },
         addEffect( effect: Effect ): void {
             if ( !this.effects.includes( effect )) {
@@ -157,6 +174,17 @@ export const useGameStore = defineStore<string, GameState, GameGetters, GameActi
             });
             // update last render timestamp
             this.setLastRender( timestamp );
-        }
+        },
+        updateTile( x: number, y: number, newType: TileTypes ): void {
+            const index = coordinateToIndex( x, y, this.world );
+            const tile = this.world.terrain[ index ];
+            if ( tile ) {
+                tile.type = newType;
+                // TODO: can we optimize this to render only at the tile pos ?
+                renderWorldMap( this.world, this.gameActors );
+            } else {
+                console.warn( `could not find tile at ${x}x${y} ???` );
+            }
+        },
     }
 });

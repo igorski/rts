@@ -46,6 +46,13 @@ export enum Unit {
     HARVESTER,
 };
 
+export enum AiActions {
+    IDLE,
+    GOTO_WAYPOINT,
+    HARVESTER_HARVEST,
+    HARVESTER_RETURN,
+};
+
 export type UnitMapping = {
     type: Unit | string;
     cost: number;

@@ -1,5 +1,7 @@
 import type { Point, Box } from "@/definitions/math";
+import type { Building, Owner } from "@/definitions/actors";
 import { TileTypes, type EnvironmentDef, type TileDef } from "@/definitions/world-tiles";
+import type { Actor } from "@/model/factories/actor-factory";
 import TileFactory from "@/model/factories/tile-factory";
 import { findPath } from "@/utils/path-finder";
 import { random, randomInRangeInt } from "@/utils/random-util";
@@ -189,6 +191,61 @@ export const getRandomFreeTilePosition = ( environment: EnvironmentDef, tileType
     } catch {
         return null;
     }
+};
+
+/**
+ * Calculate the path to get to the nearest tile of the type defined in given destTile
+ */
+export const findNearestPointOfType = (
+    world: EnvironmentDef, startX: number, startY: number, destTile: TileTypes
+): Point => {
+    // add 1 to x in case we are already on a point of the exact type
+    let x = startX + 1, xx = world.width;
+    let y = startY, yy = world.height;
+    // TODO: determine best direction to move in relative to starting point
+    // should we just move outwards from a center point and compare distance to tiles instead?
+    for ( ; x < xx; ++x ) {
+        for ( ; y < yy; ++y ) {
+            if ( world.terrain[ coordinateToIndex( x, y, world )]?.type === destTile ) {
+                return { x, y };
+            }
+        }
+    }
+    return { x, y };
+};
+
+type Distance = {
+    distance: number;
+};
+
+export const findNearestBuildingOfClass = (
+    buildings: Actor[], startX: number, startY: number, buildingClass: Building, owner: Owner
+): Point => {
+    const candidates: ( Actor & Distance )[] = buildings
+        .filter( building => building.owner === owner && building.subClass === buildingClass )
+        .map( building => ({
+            ...building,
+            distance: distance( startX, startY, building.x, building.y )
+        }));
+
+    if ( !candidates.length ) {
+        return { x: startX, y: startY };
+    }
+    // sort candidates by distance and take closest
+    const building = candidates.sort(( a, b ) => {
+        if ( a.distance < b.distance ) {
+            return -1;
+        }
+        if ( a.distance > b.distance ) {
+            return 1;
+        }
+        return 0;
+    })[ 0 ];
+    // TODO: should we more accurately get a free tile around the building?
+    return {
+        x: building.x,
+        y: building.y + building.height
+    };
 };
 
 /**

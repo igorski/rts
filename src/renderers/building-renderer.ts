@@ -20,9 +20,9 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-import type { Actor } from "@/definitions/actors;"
 import type { Rectangle } from "@/definitions/math";
 import { TILE_SIZE, TILE_WIDTH_HALF, horPosition, verPosition } from "@/definitions/world-tiles";
+import type { Actor } from "@/model/factories/actor-factory";
 import CACHE from "./render-cache";
 
 const { TILES } = CACHE.sprites;
