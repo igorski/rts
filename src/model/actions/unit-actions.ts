@@ -70,15 +70,15 @@ export const handleAI = ( unit: Actor ): void  => {
                         callback: HANDLE_AI_ACTION_COMPLETION,
                         target: unit.id,
                     }));
-                    gameStore.updateTile( unit.x, unit.y, TileTypes.SAND );
+                    gameStore.updateTile( Math.round( unit.x ), Math.round( unit.y ), TileTypes.SAND );
                     gameStore.setActorAiAction( unit, AiActions.HARVESTER_HARVEST );
                     break;
 
                 case AiActions.HARVESTER_HARVEST:
                     // find nearest refinery of same owner
                     point = findNearestBuildingOfClass( gameStore.buildings, unit.x, unit.y, Building.REFINERY, unit.owner );
-                    console.warn(navigateToPoint( unit, point.x, point.y, AiActions.HARVESTER_RETURN ));
-                    console.warn("harvesting complete, go back home", point, "from", unit.x + " x " + unit.y);
+                    const waypoints = navigateToPoint( unit, point.x, point.y, AiActions.HARVESTER_RETURN );
+                    console.warn("harvesting complete, go back home", point, "from", unit.x + " x " + unit.y + " with waypoint amount:"+waypoints.length);
                     break;
 
                 case AiActions.HARVESTER_RETURN:

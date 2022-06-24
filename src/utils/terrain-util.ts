@@ -199,19 +199,29 @@ export const getRandomFreeTilePosition = ( environment: EnvironmentDef, tileType
 export const findNearestPointOfType = (
     world: EnvironmentDef, startX: number, startY: number, destTile: TileTypes
 ): Point => {
-    // add 1 to x in case we are already on a point of the exact type
-    let x = startX + 1, xx = world.width;
-    let y = startY, yy = world.height;
-    // TODO: determine best direction to move in relative to starting point
-    // should we just move outwards from a center point and compare distance to tiles instead?
-    for ( ; x < xx; ++x ) {
-        for ( ; y < yy; ++y ) {
-            if ( world.terrain[ coordinateToIndex( x, y, world )]?.type === destTile ) {
-                return { x, y };
+    const mapRight  = world.width - 1;
+    const mapBottom = world.height - 1;
+
+    // start out by getting all surrounding tiles in a 5 tile radius,
+    // slowly expanding outwards when no match is found
+    for ( let i = 0; i < world.width; i += 5 ) {
+        const minX = Math.max( 0, startX - i );
+        const maxX = Math.min( mapRight, startX + i );
+        const minY = Math.max( 0, startY - i );
+        const maxY = Math.min( mapBottom, startY + i );
+
+        for ( let x = minX; x < maxX; ++x ) {
+            for ( let y = minY; y < maxY; ++y ) {
+                if ( x === startX && y === startY ) {
+                    continue; // ignore current position
+                }
+                if ( world.terrain[ coordinateToIndex( x, y, world )]?.type === destTile ) {
+                    return { x, y };
+                }
             }
         }
     }
-    return { x, y };
+    return { x: startX, y: startY }; // nothing found, remain where you are
 };
 
 type Distance = {
