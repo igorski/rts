@@ -31,64 +31,27 @@ import type { Effect } from "@/model/factories/effect-factory";
 import EffectFactory from "@/model/factories/effect-factory";
 import { ACTION_STORE_NAME } from "@/stores/action";
 import { useGameStore } from "@/stores/game";
-import { usePlayerStore } from "@/stores/player";
 import { findPath } from "@/utils/path-finder";
-import { findNearestPointOfType, findNearestBuildingOfClass } from "@/utils/terrain-util";
+import { handleHarvesterAI } from "@/model/actions/ai/harvester";
 
-const HANDLE_AI_ACTION_COMPLETION = "handleAIActionEnd";
+export const HANDLE_AI_ACTION_COMPLETION = "handleAIActionEnd";
 const DEFAULT_WALK_SPEED = 800; // ms per single step
+
+const DEBUG = process.env.NODE_ENV !== "production";
 
 /**
  * Whenever a Unit-type Actor is idle, the handleAI()-method is responsible
  * to give it a new task to do.
  */
 export const handleAI = ( unit: Actor ): void  => {
-    const gameStore = useGameStore();
-    let point: Point;
-    console.warn( `handleAI for Unit of class type ${unit.subClass}` );
+    if ( DEBUG ) {
+        console.warn( `handleAI for Unit of ${unit.id} (class type ${unit.subClass})` );
+    }
     switch ( unit.subClass as Unit ) {
         default:
             return;
         case Unit.HARVESTER:
-            switch ( unit.aiAction ) {
-                default:
-                    point = findNearestPointOfType( gameStore.world, unit.x, unit.y, TileTypes.GRASS );
-                    navigateToPoint( unit, point.x, point.y );
-                    console.warn( "navigating to ", point);
-                    break;
-
-                case AiActions.GOTO_WAYPOINT:
-                    console.warn("waypoint reached");
-                    // TODO move to nearestPointOfType again just to have some movement ? :)
-                    gameStore.addEffect( EffectFactory.create({
-                        store: ACTION_STORE_NAME,
-                        start: gameStore.gameTime,
-                        duration: 5000, // TODO
-                        from: 0,
-                        to: 1,
-                        action: "setAiActionValue",
-                        callback: HANDLE_AI_ACTION_COMPLETION,
-                        target: unit.id,
-                    }));
-                    gameStore.setActorAiAction( unit, AiActions.HARVESTER_HARVEST );
-                    break;
-
-                case AiActions.HARVESTER_HARVEST:
-                    // current tile is now depleted of "harvestable goodness"
-                    gameStore.updateTile( Math.round( unit.x ), Math.round( unit.y ), TileTypes.SAND );
-                    // find nearest refinery of units owner
-                    point = findNearestBuildingOfClass( gameStore.buildings, unit.x, unit.y, Building.REFINERY, unit.owner );
-                    console.warn("harvesting complete, go back home", point, "from", unit.x + " x " + unit.y );
-                    navigateToPoint( unit, point.x, point.y, AiActions.HARVESTER_RETURN );
-                    break;
-
-                case AiActions.HARVESTER_RETURN:
-                    console.warn("harvester back! awards moneys and loop!");
-                    usePlayerStore().awardCredits( Math.round( 500 * unit.aiValue ));
-                    gameStore.setActorAiAction( unit, AiActions.IDLE );
-                    handleAI( unit );
-                    break;
-            }
+            handleHarvesterAI( unit );
             break;
     }
 };
