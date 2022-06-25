@@ -58,7 +58,7 @@ type ActionActions = {
     setActorX( action: ActorAction ): void;
     setActorY( action: ActorAction ): void;
     setAiActionValue( action: ActorAction ): void;
-    handleAIActionEnd( actorId: string ): void;
+    handleAIActionEnd( action: ActorAction ): void;
 };
 
 let actor: Actor;
@@ -123,8 +123,9 @@ export const useActionStore = defineStore<string, ActionState, ActionGetters, Ac
                 actor.aiValue = action.value;
             }
         },
-        handleAIActionEnd( actorId: string ): void {
-            actor = useGameStore().actors.find(({ id }) => id === actorId ) as Actor;
+        handleAIActionEnd( action: ActorAction ): void {
+            const compareId = action.target;
+            actor = useGameStore().actors.find(({ id }) => id === compareId ) as Actor;
             if ( actor ) {
                 handleAI( actor );
             }

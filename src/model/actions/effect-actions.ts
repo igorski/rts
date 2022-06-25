@@ -85,7 +85,7 @@ export const updateEffect = ( effect: Effect, currentTime: number ): boolean => 
 
         if ( typeof effect.callback === "string" ) {
             // @ts-expect-error using string name to invoke function
-            storeRef![ effect.callback ]( target );
+            storeRef![ effect.callback ]({ value: effect.to, target });
         }
         return true;
     }

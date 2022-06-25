@@ -45,7 +45,7 @@ const DEFAULT_WALK_SPEED = 800; // ms per single step
 export const handleAI = ( unit: Actor ): void  => {
     const gameStore = useGameStore();
     let point: Point;
-    console.warn("Unit of class " + unit.subClass + " must do something.");
+    console.warn( `handleAI for Unit of class type ${unit.subClass}` );
     switch ( unit.subClass as Unit ) {
         default:
             return;
@@ -70,15 +70,16 @@ export const handleAI = ( unit: Actor ): void  => {
                         callback: HANDLE_AI_ACTION_COMPLETION,
                         target: unit.id,
                     }));
-                    gameStore.updateTile( Math.round( unit.x ), Math.round( unit.y ), TileTypes.SAND );
                     gameStore.setActorAiAction( unit, AiActions.HARVESTER_HARVEST );
                     break;
 
                 case AiActions.HARVESTER_HARVEST:
-                    // find nearest refinery of same owner
+                    // current tile is now depleted of "harvestable goodness"
+                    gameStore.updateTile( Math.round( unit.x ), Math.round( unit.y ), TileTypes.SAND );
+                    // find nearest refinery of units owner
                     point = findNearestBuildingOfClass( gameStore.buildings, unit.x, unit.y, Building.REFINERY, unit.owner );
-                    const waypoints = navigateToPoint( unit, point.x, point.y, AiActions.HARVESTER_RETURN );
-                    console.warn("harvesting complete, go back home", point, "from", unit.x + " x " + unit.y + " with waypoint amount:"+waypoints.length);
+                    console.warn("harvesting complete, go back home", point, "from", unit.x + " x " + unit.y );
+                    navigateToPoint( unit, point.x, point.y, AiActions.HARVESTER_RETURN );
                     break;
 
                 case AiActions.HARVESTER_RETURN:
@@ -107,6 +108,8 @@ export const navigateToPoint = ( actor: Actor, targetX: number, targetY: number,
     let startTime = gameStore.gameTime;
     const startX  = Math.round( actor.x );
     const startY  = Math.round( actor.y );
+    targetX = Math.round( targetX );
+    targetY = Math.round( targetY );
 
     const waypoints = findPath( gameStore.world, startX, startY, targetX, targetY, maxTile, gameStore.buildings );
     const speed = DEFAULT_WALK_SPEED; // TODO determine per actor type
@@ -115,14 +118,14 @@ export const navigateToPoint = ( actor: Actor, targetX: number, targetY: number,
     const duration = speed;
     let lastX = startX;
     let lastY = startY;
-    let effect: Effect;
 
     const lastIndex = waypoints.length - 1;
     gameStore.setActorAiAction( actor, newAction );
 
     waypoints.forEach(({ x, y }, index ) => {
         // on route completion, call the handleAI method to keep actions going
-        const callback = index === lastIndex ? HANDLE_AI_ACTION_COMPLETION : undefined;
+        let callback = index === lastIndex ? HANDLE_AI_ACTION_COMPLETION : undefined;
+        let effect: Effect | undefined;
 
         // waypoints can move between two axes at a time
         if ( x !== lastX ) {
@@ -132,6 +135,8 @@ export const navigateToPoint = ( actor: Actor, targetX: number, targetY: number,
             });
             gameStore.addEffect( effect );
             lastX = x;
+            // in case we will also have a Y movement we should only have a single callback
+            callback = undefined;
         }
         if ( y !== lastY ) {
             effect = EffectFactory.create({
@@ -141,8 +146,11 @@ export const navigateToPoint = ( actor: Actor, targetX: number, targetY: number,
             gameStore.addEffect( effect );
             lastY = y;
         }
-        if ( effect ) {
-            startTime += effect.duration; // add effects scaled duration to next start time
+        if ( effect !== undefined ) {
+            // add effects scaled duration to next start time
+            // NOTE we don't add this to both x and y effects in series because we
+            // allow a single diagonal movement to occur (x and y travel at the same time)
+            startTime += effect.duration;
         }
     });
     return waypoints;

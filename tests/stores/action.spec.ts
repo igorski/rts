@@ -142,7 +142,7 @@ describe( "Action Pinia store", () => {
             const actor = gameStoreMock.actors[ 1 ];
 
             const spy = vi.spyOn( unitActionsMock, "handleAI" );
-            store.handleAIActionEnd( actor.id );
+            store.handleAIActionEnd({ value: 1, target: actor.id });
 
             expect( spy ).toHaveBeenCalledWith( actor );
         });
