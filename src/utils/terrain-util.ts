@@ -201,6 +201,7 @@ export const findNearestPointOfType = (
 ): Point => {
     const mapRight  = world.width - 1;
     const mapBottom = world.height - 1;
+    const candidates: ( Point & Distance )[] = [];
 
     // start out by getting all surrounding tiles in a 5 tile radius,
     // slowly expanding outwards when no match is found
@@ -216,10 +217,13 @@ export const findNearestPointOfType = (
                     continue; // ignore current position
                 }
                 if ( world.terrain[ coordinateToIndex( x, y, world )]?.type === destTile ) {
-                    return { x, y };
+                    candidates.push({ x, y, distance: distance( startX, startY, x, y ) });
                 }
             }
         }
+    }
+    if ( candidates.length > 0 ) {
+        return candidates.sort( sortPointsByDistance )[ 0 ];
     }
     return { x: startX, y: startY }; // nothing found, remain where you are
 };
@@ -242,21 +246,23 @@ export const findNearestBuildingOfClass = (
         return { x: startX, y: startY };
     }
     // sort candidates by distance and take closest
-    const building = candidates.sort(( a, b ) => {
-        if ( a.distance < b.distance ) {
-            return -1;
-        }
-        if ( a.distance > b.distance ) {
-            return 1;
-        }
-        return 0;
-    })[ 0 ];
+    const building = candidates.sort( sortPointsByDistance )[ 0 ];
     // TODO: should we more accurately get a free tile around the building?
     return {
         x: building.x,
         y: building.y + building.height
     };
 };
+
+function sortPointsByDistance( a: Distance, b: Distance ): number {
+    if ( a.distance < b.distance ) {
+        return -1;
+    }
+    if ( a.distance > b.distance ) {
+        return 1;
+    }
+    return 0;
+}
 
 /**
  * Translates an x/y coordinate to the corresponding index in an environments terrain list

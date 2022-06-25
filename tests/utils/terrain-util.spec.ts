@@ -14,11 +14,16 @@ describe( "Terrain utilities", () => {
         const buildings = [
             // list of matching buildings at different distances
             ActorFactory.create({ x: 20, y: 20, height: 2, owner, type: ActorType.BUILDING, subClass: Building.REFINERY }),
+            ActorFactory.create({ x: 48, y: 50, height: 2, owner, type: ActorType.BUILDING, subClass: Building.REFINERY }),
+            ActorFactory.create({ x: 51, y: 52, height: 2, owner, type: ActorType.BUILDING, subClass: Building.REFINERY }),
             ActorFactory.create({ x: 55, y: 55, height: 2, owner, type: ActorType.BUILDING, subClass: Building.REFINERY }),
             ActorFactory.create({ x: 90, y: 99, height: 2, owner, type: ActorType.BUILDING, subClass: Building.REFINERY }),
             // similar buildings but of other class or ownership
-            ActorFactory.create({ x: 20, y: 20, height: 2, owner, type: ActorType.BUILDING, subClass: Building.BARRACKS }),
-            ActorFactory.create({ x: 40, y: 40, height: 2, owner: Owner.AI, type: ActorType.BUILDING, subClass: Building.REFINERY })
+            ActorFactory.create({ x: 20, y: 20, height: 2, owner: Owner.AI, type: ActorType.BUILDING, subClass: Building.REFINERY }),
+            ActorFactory.create({ x: 48, y: 50, height: 2, owner: Owner.AI, type: ActorType.BUILDING, subClass: Building.REFINERY }),
+            ActorFactory.create({ x: 51, y: 52, height: 2, owner: Owner.AI, type: ActorType.BUILDING, subClass: Building.REFINERY }),
+            ActorFactory.create({ x: 55, y: 55, height: 2, owner: Owner.AI, type: ActorType.BUILDING, subClass: Building.REFINERY }),
+            ActorFactory.create({ x: 90, y: 99, height: 2, owner: Owner.AI, type: ActorType.BUILDING, subClass: Building.REFINERY }),
         ];
 
         const expectedMatch = buildings[ 1 ];
