@@ -21,24 +21,24 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 <template>
-    <div class="base-control">
-        <div class="base-control__actions">
+    <div class="command-window">
+        <div class="command-window__actions">
             <button
                 v-t="'buildings'"
                 type="button"
-                class="base-control__actions__button"
-                :class="{ 'base-control__actions__button--active': mode === 0 }"
+                class="command-window__actions__button"
+                :class="{ 'command-window__actions__button--active': mode === 0 }"
                 @click="mode = 0"
             ></button>
             <button
                 v-t="'units'"
                 type="button"
-                class="base-control__actions__button"
-                :class="{ 'base-control__actions__button--active': mode === 1 }"
+                class="command-window__actions__button"
+                :class="{ 'command-window__actions__button--active': mode === 1 }"
                 @click="mode = 1"
             ></button>
         </div>
-        <div class="base-control__items">
+        <div class="command-window__items">
             <building-construction-window
                 v-if="mode === 0"
                 v-model="selectedBuilding"
@@ -48,18 +48,18 @@
                 v-model="selectedUnit"
             />
         </div>
-        <div class="base-control__actions">
+        <div class="command-window__actions">
             <button
                 v-t="'buy'"
                 type="button"
-                class="base-control__actions__button"
+                class="command-window__actions__button"
                 :disabled="!canBuy"
                 @click="buyItem()"
             ></button>
             <button
                 v-t="'sell'"
                 type="button"
-                class="base-control__actions__button"
+                class="command-window__actions__button"
                 :disabled="!canSell"
                 @click="sellItem()"
             ></button>
@@ -189,32 +189,9 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 @import "@/assets/styles/_variables";
+@import "@/assets/styles/ui";
 
-.base-control {
-    position: relative;
-    border: 2px solid #000;
-    border-radius: 7px;
-    overflow: hidden;
-    margin-bottom: $spacing-medium;
-
-    &__items {
-        overflow-x: hidden;
-        overflow-y: auto;
-        max-height: 200px;
-    }
-
-    &__actions {
-        display: flex;
-        justify-content: space-between;
-
-        &__button {
-            flex: 1;
-            border: none;
-
-            &--active {
-                background-color: yellow;
-            }
-        }
-    }
+.command-window {
+    @include commandWindow();
 }
 </style>

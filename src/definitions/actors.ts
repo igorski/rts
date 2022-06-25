@@ -49,6 +49,7 @@ export enum Unit {
 export enum AiActions {
     IDLE,
     GOTO_WAYPOINT,
+    RETURN_TO_BASE,
     HARVESTER_HARVEST,
     HARVESTER_RETURN,
 };

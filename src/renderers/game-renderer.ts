@@ -182,7 +182,7 @@ export default class GameRenderer extends sprite {
                     return this.interactionCallback({ type: CanvasActions.OBJECT_PLACE, data: this.pointerPos });
                 }
 
-                const actor = this.visibleActors.find(({ x, y }) => x === this.pointerPos.x && y === this.pointerPos.y );
+                const actor = this.visibleActors.find(({ x, y }) => Math.round( x ) === this.pointerPos.x && Math.round( y ) === this.pointerPos.y );
                 if ( actor ) {
                     this.interactionCallback({ type: CanvasActions.ACTOR_SELECT, data: actor });
                 } else {

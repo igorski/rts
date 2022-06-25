@@ -39,6 +39,11 @@ const DEFAULT_WALK_SPEED = 800; // ms per single step
 
 const DEBUG = process.env.NODE_ENV !== "production";
 
+export type UnitCommand = {
+    name: string;
+    action: AiActions;
+};
+
 /**
  * Whenever a Unit-type Actor is idle, the handleAI()-method is responsible
  * to give it a new task to do.

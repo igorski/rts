@@ -1,0 +1,29 @@
+@import "./_variables";
+
+@mixin commandWindow() {
+    position: relative;
+    border: 2px solid #000;
+    border-radius: 7px;
+    overflow: hidden;
+    margin-bottom: $spacing-medium;
+
+    &__items {
+        overflow-x: hidden;
+        overflow-y: auto;
+        max-height: 200px;
+    }
+
+    &__actions {
+        display: flex;
+        justify-content: space-between;
+
+        &__button {
+            flex: 1;
+            border: none;
+
+            &--active {
+                background-color: yellow;
+            }
+        }
+    }
+}

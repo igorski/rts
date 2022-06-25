@@ -25,6 +25,7 @@ import type { Point } from "@/definitions/math";
 import { TileTypes } from "@/definitions/world-tiles";
 import type { Actor } from "@/model/factories/actor-factory";
 import EffectFactory from "@/model/factories/effect-factory";
+import type { UnitCommand } from "@/model/actions/unit-actions";
 import { HANDLE_AI_ACTION_COMPLETION, handleAI, navigateToPoint } from "@/model/actions/unit-actions";
 import { ACTION_STORE_NAME } from "@/stores/action";
 import { useGameStore } from "@/stores/game";
@@ -75,16 +76,21 @@ export const handleHarvesterAI = ( unit: Actor ): void => {
             // check filled status of harvester, when full return to base, if not find next area
             const curFillValue = unit.aiValue;
             if ( unit.aiValue >= 1 ) {
-                // find nearest refinery of units owner
-                point = findNearestBuildingOfClass( gameStore.buildings, curPos.x, curPos.y, Building.REFINERY, unit.owner );
-                navigateToPoint( unit, point.x, point.y, AiActions.HARVESTER_RETURN );
+                resetAction( unit, AiActions.RETURN_TO_BASE );
             } else {
                 resetAction( unit );
             }
             break;
 
+        case AiActions.RETURN_TO_BASE:
+            console.warn( `${unit.id} must return to base` );
+            // find nearest refinery of units owner
+            point = findNearestBuildingOfClass( gameStore.buildings, curPos.x, curPos.y, Building.REFINERY, unit.owner );
+            navigateToPoint( unit, point.x, point.y, AiActions.HARVESTER_RETURN );
+            break;
+
         case AiActions.HARVESTER_RETURN:
-            usePlayerStore().awardCredits( Math.round( 500 * Math.max( 1, unit.aiValue )));
+            usePlayerStore().awardCredits( Math.round( 500 * Math.min( 1, unit.aiValue )));
             gameStore.setActorAiAction( unit, AiActions.IDLE );
             // slight delay after which AI operations will resume from beginning
             gameStore.addEffect( EffectFactory.create({
@@ -101,9 +107,13 @@ export const handleHarvesterAI = ( unit: Actor ): void => {
     }
 };
 
+export const harvesterCommands = (): UnitCommand[] => [
+    { name: "returnToBase", action: AiActions.RETURN_TO_BASE },
+];
+
 /* internal methods */
 
-function resetAction( unit: Actor ): void {
-    useGameStore().setActorAiAction( unit, AiActions.IDLE );
+function resetAction( unit: Actor, action: AiActions = AiActions.IDLE ): void {
+    useGameStore().setActorAiAction( unit, action );
     handleAI( unit );
 }

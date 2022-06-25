@@ -23,15 +23,17 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { storeToRefs } from "pinia";
-import ConstructionWindow from "./components/construction-window/construction-window.vue";
-import DialogWindow from "./components/dialog-window/dialog-window.vue";
-import GameCanvas from "./components/game-canvas/game-canvas.vue";
-import HeaderMenu from "./components/header-menu/header-menu.vue";
-import Notifications from "./components/notifications/notifications.vue";
-import WorldMap from "./components/world-map/world-map.vue";
-import { useGameStore } from "./stores/game";
-import { useStorageStore } from "./stores/storage";
-import { useSystemStore } from "./stores/system";
+import CommandWindow from "@/components/command-window/command-window.vue";
+import ConstructionWindow from "@/components/construction-window/construction-window.vue";
+import DialogWindow from "@/components/dialog-window/dialog-window.vue";
+import GameCanvas from "@/components/game-canvas/game-canvas.vue";
+import HeaderMenu from "@/components/header-menu/header-menu.vue";
+import Notifications from "@/components/notifications/notifications.vue";
+import WorldMap from "@/components/world-map/world-map.vue";
+import { useActionStore } from "@/stores/action";
+import { useGameStore } from "@/stores/game";
+import { useStorageStore } from "@/stores/storage";
+import { useSystemStore } from "@/stores/system";
 import { initCache } from "@/renderers/render-cache";
 import { renderWorldMap } from "@/renderers/map-renderer";
 
@@ -39,6 +41,8 @@ const storageStore = useStorageStore();
 
 const { hasSavedGame } = storeToRefs( storageStore );
 const { dialog } = storeToRefs( useSystemStore() );
+const { hasSelection } = storeToRefs( useActionStore() );
+
 const loading = ref( true );
 
 async function onGameLoad(): Promise<void> {
@@ -61,6 +65,9 @@ if ( hasSavedGame.value ) {
         <template v-else>
             <game-canvas />
             <div class="game-ui">
+                <command-window
+                    v-if="hasSelection"
+                />
                 <construction-window />
                 <world-map />
             </div>
