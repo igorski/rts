@@ -21,7 +21,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 import { defineStore } from "pinia";
-import { ActorType } from "@/definitions/actors";
+import { ActorType, Building } from "@/definitions/actors";
 import type { AiActions } from "@/definitions/actors";
 import type { EnvironmentDef } from "@/definitions/world-tiles";
 import type { TileTypes } from "@/definitions/world-tiles";
@@ -54,6 +54,7 @@ type GameState = {
 type GameGetters = {
     gameActors: ( state: GameState ) => Actor[],
     buildings: ( state: GameState ) => Actor[],
+    canBuild: ( state: GameState ) => boolean,
 };
 
 type GameActions = {
@@ -89,6 +90,7 @@ export const useGameStore = defineStore<string, GameState, GameGetters, GameActi
     getters: {
         gameActors: ( state: GameState ): Actor[] => state.actors,
         buildings: ( state: GameState ): Actor[] => state.actors.filter(({ type }) => type === ActorType.BUILDING ),
+        canBuild: ( state: GameState ): boolean => !!state.actors.find(({ subClass }) => subClass === Building.CONSTRUCTION_YARD ),
     },
     actions: {
         init(): Promise<void> {

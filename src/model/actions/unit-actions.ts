@@ -125,7 +125,7 @@ export const navigateToPoint = ( actor: Actor, targetX: number, targetY: number,
 };
 
 export const canBuildUnit = ( unit: UnitMapping, buildings: Actor[] ): boolean => {
-    switch ( unit.type ) {
+    switch ( unit.subClass ) {
         default:
             return false;
         case Unit.SCOUT:
@@ -147,15 +147,15 @@ export const canBuildUnit = ( unit: UnitMapping, buildings: Actor[] ): boolean =
  * refinery comes with a free harvester), can be undefined.
  */
 export const unitForBuilding = ( building: Actor ): UnitMapping | undefined => {
-    let type: Unit;
+    let unitClass: Unit;
     switch ( building.subClass ) {
         default:
             return undefined;
         case Building.REFINERY:
-            type = Unit.HARVESTER;
+            unitClass = Unit.HARVESTER;
             break;
     }
-    return getUnitMappings().find( unit => type === unit.type );
+    return getUnitMappings().find( mapping => mapping.subClass === unitClass );
 };
 
 /**
@@ -167,7 +167,7 @@ export const buildUnitForBuilding = ( unit: UnitMapping, building: Actor, owner:
 
     return ActorFactory.create({
         type: ActorType.UNIT,
-        subClass: unit.type as Unit,
+        subClass: unit.subClass as Unit,
         owner,
         x, y,
         width: unit.width,

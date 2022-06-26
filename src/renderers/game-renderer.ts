@@ -25,6 +25,7 @@ import { CameraActions } from "@/definitions/camera-actions";
 import type { Actor } from "@/definitions/actors";
 import { ActorType } from "@/definitions/actors";
 import type { Point, Rectangle, Box, Size } from "@/definitions/math";
+import { fastRound } from "@/definitions/math";
 import type { TileDef, EnvironmentDef } from "@/definitions/world-tiles";
 import {
     TileTypes, TILE_SIZE, TILE_WIDTH_HALF, TILE_HEIGHT_HALF,
@@ -182,7 +183,15 @@ export default class GameRenderer extends sprite {
                     return this.interactionCallback({ type: CanvasActions.OBJECT_PLACE, data: this.pointerPos });
                 }
 
-                const actor = this.visibleActors.find(({ x, y }) => Math.round( x ) === this.pointerPos.x && Math.round( y ) === this.pointerPos.y );
+                const actor = this.visibleActors.find(({ x, y, z, width, height }) => {
+                    let left = fastRound( x );
+                    let right = left + width;
+                    let top = fastRound( y );
+                    let bottom = top + height;
+                    // TODO : take building z into account
+                    return ( this.pointerPos.x >= left && this.pointerPos.x <= right &&
+                             this.pointerPos.y >= top  && this.pointerPos.y <= bottom );
+                });
                 if ( actor ) {
                     this.interactionCallback({ type: CanvasActions.ACTOR_SELECT, data: actor });
                 } else {
@@ -209,8 +218,8 @@ export default class GameRenderer extends sprite {
             this.lastX = x;
             this.lastY = y;
 
-            this.viewport.left = Math.round((( halfMap ) + horPosition( x, y )) - this.mapCenterX );
-            this.viewport.top  = Math.round( verPosition( x, y ) - this.mapCenterY );
+            this.viewport.left = fastRound((( halfMap ) + horPosition( x, y )) - this.mapCenterX );
+            this.viewport.top  = fastRound( verPosition( x, y ) - this.mapCenterY );
 
             panned = true;
         }
@@ -306,8 +315,8 @@ export default class GameRenderer extends sprite {
         const out = { x: Infinity, y: Infinity };
 
         // 2D coordinate of tile under mouse position
-        const tileX = Math.round((( y + x * 0.5 ) / this.actualTileHeight ) - ( this.world.width * 0.5 ));
-        const tileY = Math.round((( y - x * 0.5 ) / this.actualTileHeight ) + ( this.world.height * 0.5 ));
+        const tileX = fastRound((( y + x * 0.5 ) / this.actualTileHeight ) - ( this.world.width * 0.5 ));
+        const tileY = fastRound((( y - x * 0.5 ) / this.actualTileHeight ) + ( this.world.height * 0.5 ));
 
         if ( tileX < 0 || tileX > this.world.width || tileY < 0 || tileY > this.world.height ) {
             return out; // tile is out of world bounds

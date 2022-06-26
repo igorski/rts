@@ -30,8 +30,9 @@ export type Actor = {
     subClass: Building | Unit;
     x: number;
     y: number;
-    width: number;
-    height: number;
+    width: number; // width in x
+    height: number; // height in y
+    z: number; // vertical height
     maxEnergy: number;
     energy: number;
     attack: number;
@@ -48,6 +49,7 @@ export type SerializedActor = {
     s: Building | Unit;
     x: number;
     y: number;
+    z: number;
     w: number;
     h: number;
     m: number;
@@ -65,6 +67,7 @@ interface ActorProps {
     subClass: Building | Unit;
     x?: number;
     y?: number;
+    z?: number;
     width?: number;
     height?: number;
     maxEnergy?: number;
@@ -80,7 +83,7 @@ interface ActorProps {
 const ActorFactory =
 {
     create({
-        type, subClass, x = 0, y = 0, width = 1, height = 1,
+        type, subClass, x = 0, y = 0, z = 1, width = 1, height = 1,
         maxEnergy = 1, energy = 1, attack = 0, defense = 0,
         owner = Owner.AI, completion = 1, aiAction = AiActions.IDLE, aiValue = 0,
     }: ActorProps ): Actor {
@@ -88,7 +91,7 @@ const ActorFactory =
             id: getUid(),
             type,
             subClass,
-            x, y,
+            x, y, z,
             width, height,
             maxEnergy, energy,
             attack, defense,
@@ -104,6 +107,7 @@ const ActorFactory =
             s: actor.subClass,
             x: actor.x,
             y: actor.y,
+            z: actor.z,
             w: actor.width,
             h: actor.height,
             m: actor.maxEnergy,
@@ -123,6 +127,7 @@ const ActorFactory =
             subClass: data.s,
             x: data.x,
             y: data.y,
+            z: data.z,
             width: data.w,
             height: data.h,
             maxEnergy: data.m,

@@ -43,3 +43,5 @@ export type Box = {
     right: number;
     bottom: number;
 };
+
+export const fastRound = ( num: number ): number => num > 0 ? ( num + .5 ) << 0 : num | 0;

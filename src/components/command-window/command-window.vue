@@ -38,34 +38,40 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import { mapState, mapActions } from "pinia";
-import { Unit, AiActions } from "@/definitions/actors";
+import { ActorType, Unit, AiActions } from "@/definitions/actors";
 import type { UnitCommand } from "@/model/actions/unit-actions";
 import { handleAI } from "@/model/actions/unit-actions";
 import { harvesterCommands } from "@/model/actions/ai/harvester";
+import type { Actor } from "@/model/factories/actor-factory";
 import { useActionStore } from "@/stores/action";
 import { useGameStore } from "@/stores/game";
 import { useSystemStore } from "@/stores/system";
 
 import messages from "./messages.json";
+import sharedMessages from "@/messages.json";
+
+function assertType( list: Actor[], compareSubClass: Unit ): boolean {
+    return list.every(({ type, subClass }) => type === ActorType.UNIT && subClass === compareSubClass );
+}
 
 export default defineComponent({
-    i18n: { messages },
+    i18n: { messages, sharedMessages },
     computed: {
         ...mapState( useActionStore, [
             "selectedActors",
         ]),
         selectionName(): string {
-            if ( this.selectedActors.every(({ subClass }) => subClass === Unit.SCOUT )) {
-                return this.$t( "scout" );
+            if ( assertType( this.selectedActors, Unit.SCOUT )) {
+                return this.$t( "unit.scout" );
             }
-            if ( this.selectedActors.every(({ subClass }) => subClass === Unit.HARVESTER )) {
-                return this.$t( "harvester" );
+            if ( assertType( this.selectedActors, Unit.HARVESTER )) {
+                return this.$t( "unit.harvester" );
             }
             return this.$t( "multipleUnits" );
         },
         commands(): UnitCommand[] {
             let commands: UnitCommand[] = [{ name: "close", action : AiActions.IDLE }];
-            if ( this.selectedActors.every(({ subClass }) => subClass === Unit.HARVESTER )) {
+            if ( assertType( this.selectedActors, Unit.HARVESTER )) {
                 commands = [ ...commands, ...harvesterCommands() ];
             }
             return commands.map(({ name, action }) => ({

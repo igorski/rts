@@ -2,6 +2,7 @@
     "en": {
         "constructionComplete": "Construction complete.",
         "building": {
+            "constructionYard": "Construction yard",
             "refinery": "Refinery",
             "barracks": "Barracks",
             "defenseTurret": "Defense turret"

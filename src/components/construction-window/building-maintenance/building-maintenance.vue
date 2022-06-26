@@ -21,44 +21,76 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 <template>
-    <div
-        v-for="( building, index ) in buildings"
-        :key="`building_${index}`"
-        :class="{ 'base-control__items__entry--selected': modelValue === building }"
-        class="base-control__items__entry"
-        @click="setValue( building )"
-    >
-        {{ building.name }} {{ building.cost }}
-    </div>
+    <button
+        v-t="'repair'"
+        type="button"
+        class="command-window__actions__button"
+        :disabled="!hasDamage"
+        @click="repairBuilding()"
+    ></button>
+    <button
+        v-t="'sell'"
+        type="button"
+        class="command-window__actions__button"
+        @click="sellBuilding()"
+    ></button>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import { mapState, mapActions } from "pinia";
 import { getBuildingMappings } from "@/definitions/actors";
-import type { BuildingMapping } from "@/definitions/actors";
+import { useActionStore } from "@/stores/action";
+import { useGameStore } from "@/stores/game";
+import { usePlayerStore } from "@/stores/player";
+import { useSystemStore } from "@/stores/system";
+
+import messages from "./messages.json";
 
 export default defineComponent({
-    props: {
-        modelValue: {
-            type: Object,
-            default: undefined,
+    i18n: { messages },
+    computed: {
+        ...mapState( useActionStore, [
+            "selectedActors",
+        ]),
+        building() {
+            return this.selectedActors[ 0 ];
+        },
+        hasDamage(): boolean {
+            return this.building.energy < this.building.maxEnergy;
         },
     },
-    data: () => ({
-        buildings: getBuildingMappings(),
-    }),
     methods: {
-        setValue( value: BuildingMapping ): void {
-            this.$emit( "update:modelValue", value );
+        ...mapActions( useActionStore, [
+            "setSelection",
+        ]),
+        ...mapActions( useGameStore, [
+            "removeActor",
+        ]),
+        ...mapActions( usePlayerStore, [
+            "awardCredits",
+        ]),
+        ...mapActions( useSystemStore, [
+            "showNotification",
+        ]),
+        repairBuilding(): void {
+
+        },
+        sellBuilding(): void {
+            const mapping = getBuildingMappings().find(({ subClass }) => subClass === this.building.subClass );
+            this.removeActor( this.building );
+            this.setSelection( [] );
+            this.awardCredits( mapping.cost );
+            this.showNotification( this.$t( "constructionSold" ));
         },
     },
-})
+});
 </script>
 
 <style lang="scss" scoped>
 @import "@/assets/styles/_variables";
 
-.base-control__items__entry {
+.command-window__actions__button {
     cursor: pointer;
     padding: $spacing-small;
 

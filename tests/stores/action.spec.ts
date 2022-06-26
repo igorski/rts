@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import WorldFactory from "@/model/factories/world-factory";
-import { randomBuildingMapping, randomUnit } from "../test-util";
+import { randomBuildingMapping, randomUnit, randomBuilding } from "../test-util";
 
 const gameStoreMock = {
     created: 100,
@@ -96,15 +96,15 @@ describe( "Action Pinia store", () => {
             expect( store.selectedActors ).toEqual( actors );
         });
 
-        it( "should be able to assign a target to all currently selected Actors", () => {
+        it( "should be able to assign a target to all currently selected Unit-type Actors", () => {
             const store = useActionStore();
-            store.selectedActors = [ randomUnit(), randomUnit() ];
+            store.selectedActors = [ randomUnit(), randomBuilding(), randomUnit() ];
 
             const spy = vi.spyOn( unitActionsMock, "navigateToPoint" );
             store.assignTarget( 10, 15 );
 
             expect( spy ).toHaveBeenNthCalledWith( 1, store.selectedActors[ 0 ], 10, 15 );
-            expect( spy ).toHaveBeenNthCalledWith( 2, store.selectedActors[ 1 ], 10, 15 );
+            expect( spy ).toHaveBeenNthCalledWith( 2, store.selectedActors[ 2 ], 10, 15 );
         });
 
         it( "should be able to update the x-position of a specific Actor", () => {

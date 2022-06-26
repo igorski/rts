@@ -28,17 +28,20 @@ export enum ActorType {
 };
 
 export enum Building {
+    CONSTRUCTION_YARD,
     REFINERY,
     BARRACKS,
     TURRET
 };
 
 export type BuildingMapping = {
-    type: Building | string;
+    subClass: Building | string;
     cost: number;
     name: string;
     width: number;
     height: number;
+    z: number;
+    constructable: boolean;
 };
 
 export enum Unit {
@@ -55,7 +58,7 @@ export enum AiActions {
 };
 
 export type UnitMapping = {
-    type: Unit | string;
+    subClass: Unit | string;
     cost: number;
     name: string;
     width: number;
@@ -70,23 +73,35 @@ export enum Owner {
 export const getBuildingMappings = (): BuildingMapping[] => {
     return Object.values( Building )
         .filter( value => typeof value === "number" )
-        .map( type =>
+        .map( subClass =>
     {
         let cost = 500;
         let name = "";
         let width = 1;
         let height = 1;
-        switch ( type ) {
+        let z = 1;
+        let constructable = true;
+        switch ( subClass ) {
             default:
                 if ( process.env.NODE_ENV !== "production" ) {
-                    throw new Error( `There is no mapping for Building type "${type}" available` );
+                    throw new Error( `There is no mapping for Building subClass "${subClass}" available` );
                 }
+                break;
+            case Building.CONSTRUCTION_YARD:
+                cost = 1000;
+                name = "constructionYard";
+                width = 2;
+                height = 2;
+                z = 2;
+                // construction yard cannot be built, once you lose it, you lost the ability to construct buildings!
+                constructable = false;
                 break;
             case Building.REFINERY:
                 cost = 300;
                 name = "refinery";
                 width = 3;
                 height = 2;
+                z = 3;
                 break;
             case Building.BARRACKS:
                 cost = 1000;
@@ -97,25 +112,26 @@ export const getBuildingMappings = (): BuildingMapping[] => {
             case Building.TURRET:
                 cost = 2500;
                 name = "defenseTurret";
+                z = 5;
                 break;
 
         }
-        return { type, cost, name: i18n.t( `building.${name}` ), width, height };
+        return { subClass, cost, constructable, name: i18n.t( `building.${name}` ), width, height, z };
     });
 };
 
 export const getUnitMappings = (): UnitMapping[] => {
     return Object.values( Unit )
         .filter( value => typeof value === "number" )
-        .map( type => {
+        .map( subClass => {
             let cost = 50;
             let name = "";
             let width = 1;
             let height = 1;
-            switch ( type ) {
+            switch ( subClass ) {
                 default:
                     if ( process.env.NODE_ENV !== "production" ) {
-                        throw new Error( `There is no mapping for Unit type "${type}" available` );
+                        throw new Error( `There is no mapping for Unit subClass "${subClass}" available` );
                     }
                     break;
                 case Unit.SCOUT:
@@ -126,6 +142,6 @@ export const getUnitMappings = (): UnitMapping[] => {
                     cost = 750;
                     break;
             }
-            return { type, cost, name: i18n.t( `unit.${name}` ), width, height };
+            return { subClass, cost, name: i18n.t( `unit.${name}` ), width, height };
         });
 };

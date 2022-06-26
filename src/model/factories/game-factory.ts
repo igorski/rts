@@ -21,7 +21,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 import LZString from "lz-string";
-import { ActorType, Unit, Owner } from "@/definitions/actors";
+import { ActorType, Unit, Building, Owner } from "@/definitions/actors";
 import type { EnvironmentDef } from "@/definitions/world-tiles";
 import ActorFactory, { type Actor, type SerializedActor } from "./actor-factory";
 import EffectFactory, { type Effect, type SerializedEffect } from "./effect-factory";
@@ -58,11 +58,18 @@ const GameFactory =
             actors: [] as Actor[],
             effects: [] as Effect[],
         };
-        // always give player one scout
+        // always give player a construction yard
+        game.actors.push(
+            ActorFactory.create({
+                type: ActorType.BUILDING, subClass: Building.CONSTRUCTION_YARD, owner: Owner.PLAYER,
+                x: game.world.x, y: game.world.y, width: 2, height: 2
+            })
+        )
+        // ...and one scout
         game.actors.push(
             ActorFactory.create({
                 type: ActorType.UNIT, subClass: Unit.SCOUT, owner: Owner.PLAYER,
-                x: game.world.x, y: game.world.y
+                x: game.world.x, y: game.world.y + 3
             })
         );
         return game;

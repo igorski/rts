@@ -1,9 +1,6 @@
 {
     "en": {
         "buildings": "Buildings",
-        "units": "Units / Vehicles",
-        "buy": "Buy",
-        "sell": "Sell",
-        "building": "Building..."
+        "maintenance": "Maintenance"
     }
 }

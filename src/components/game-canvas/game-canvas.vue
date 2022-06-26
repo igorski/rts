@@ -185,9 +185,9 @@ export default defineComponent({
                     const actor: Actor = data as Actor;
                     this.setSelection([ actor ]);
                     if ( actor.type === ActorType.BUILDING ) {
-                        this.setMessage( this.buildingMappings.find(({ type }) => type === actor.subClass ).name );
+                        this.setMessage( this.buildingMappings.find(({ subClass }) => subClass === actor.subClass ).name );
                     } else if ( actor.type === ActorType.UNIT ) {
-                        this.setMessage( this.unitMappings.find(({ type }) => type === actor.subClass ).name );
+                        this.setMessage( this.unitMappings.find(({ subClass }) => subClass === actor.subClass ).name );
                     }
                     break;
                 case CanvasActions.AREA_CLICK:

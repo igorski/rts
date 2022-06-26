@@ -13,7 +13,7 @@ describe( "Actor factory", () => {
         const actor = ActorFactory.create({
             type: ActorType.BUILDING,
             subClass: Building.TURRET,
-            x: 100, y: 120,
+            x: 100, y: 120, z: 3,
             width: 5, height: 4,
             maxEnergy: 10, energy: 5,
             attack: 2, defense: 4,
@@ -24,6 +24,7 @@ describe( "Actor factory", () => {
         expect( actor.subClass ).toEqual( Building.TURRET );
         expect( actor.x ).toEqual( 100 );
         expect( actor.y ).toEqual( 120 );
+        expect( actor.z ).toEqual( 3 );
         expect( actor.width ).toEqual( 5 );
         expect( actor.height ).toEqual( 4 );
         expect( actor.maxEnergy ).toEqual( 10 );
@@ -40,7 +41,7 @@ describe( "Actor factory", () => {
         const actor = ActorFactory.create({
             type: ActorType.BUILDING,
             subClass: Building.REFINERY,
-            x: 50, y: 60,
+            x: 50, y: 60, z: 4,
             width: 3, height: 2,
             maxEnergy: 5, energy: 2,
             attack: 1, defense: 2,

@@ -29,8 +29,8 @@ const { TILES } = CACHE.sprites;
 
 export const renderBuilding = ( ctx: CanvasRenderingContext2D, halfWidth: number, viewport: Rectangle, building: Actor ): void =>
 {
-    const { left, top }  = viewport;
-    const { completion } = building;
+    const { left, top } = viewport;
+    const { completion, z } = building;
 
     // tile height is animated duration building phase
 
@@ -42,8 +42,7 @@ export const renderBuilding = ( ctx: CanvasRenderingContext2D, halfWidth: number
         for ( let y = building.y, yl = y + building.height; y < yl; ++y ) {
             const destX = ( halfWidth + ( horPosition( x - 1, y - 1 ) - TILE_WIDTH_HALF )) - left;
             const destY = ( TILE_HEIGHT_HALF + ( verPosition( x - 1, y - 1) - TILE_HEIGHT_HALF )) - top;
-            // TODO get building height
-            for ( let h = 0; h < 2; ++h ) {
+            for ( let h = 0; h < z; ++h ) {
                 ctx.drawImage(
                     TILES, 384, 0, TILE_SIZE, TILE_SIZE,
                     destX, ( destY - ( h * TILE_HEIGHT_HALF )) + SIZE_MINUS_HEIGHT,

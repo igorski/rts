@@ -24,9 +24,9 @@
     <div
         v-for="( unit, index ) in units"
         :key="`unit${index}`"
-        :class="{ 'base-control__items__entry--selected': modelValue === unit }"
+        :class="{ 'base-control__items__entry--selected': selectedUnit === unit }"
         class="base-control__items__entry"
-        @click="setValue( unit )"
+        @click="selectedUnit = unit"
     >
         {{ unit.name }} {{ unit.cost }}
     </div>
@@ -34,9 +34,12 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import { mapState } from "pinia";
-import { getUnitMappings } from "@/definitions/actors";
+import { mapState, mapActions } from "pinia";
+import { Building, Owner getUnitMappings } from "@/definitions/actors";
 import type { UnitMapping } from "@/definitions/actors";
+import { canBuildUnit, buildUnitForBuilding } from "@/model/actions/unit-actions";
+import { useGameStore } from "@/stores/game";
+import { usePlayerStore } from "@/stores/player";
 
 export default defineComponent({
     props: {
@@ -47,10 +50,24 @@ export default defineComponent({
     },
     data: () => ({
         units: getUnitMappings(),
+        selectedUnit: undefined,
     }),
+    computed: {
+        ...mapState( useGameStore, [
+            "buildings",
+        ]),
+    },
     methods: {
-        setValue( value: UnitMapping ): void {
-            this.$emit( "update:modelValue", value );
+        ...mapActions( useGameStore, [
+            "addActor",
+        ]),
+        ...mapActions( usePlayerStore, [
+            "deductCredits",
+        ]),
+        buildItem(): void {
+            this.deductCredits( this.selectedUnit.cost );
+            const building = this.buildings.find(({ subClass }) => subClass === Building.REFINERY );
+            this.addActor( buildUnitForBuilding( this.selectedUnit.type, building, Owner.PLAYER ));
         },
     },
 })

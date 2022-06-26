@@ -22,6 +22,7 @@
  */
 <template>
     <div class="command-window">
+        <h3>{{ $t( "building.constructionYard" )}}</h3>
         <div class="command-window__actions">
             <button
                 v-t="'buildings'"
@@ -31,7 +32,7 @@
                 @click="mode = 0"
             ></button>
             <button
-                v-t="'units'"
+                v-t="'maintenance'"
                 type="button"
                 class="command-window__actions__button"
                 :class="{ 'command-window__actions__button--active': mode === 1 }"
@@ -39,151 +40,32 @@
             ></button>
         </div>
         <div class="command-window__items">
-            <building-construction-window
+            <building-construction
                 v-if="mode === 0"
-                v-model="selectedBuilding"
             />
-            <unit-construction-window
+            <building-maintenance
                 v-if="mode === 1"
-                v-model="selectedUnit"
             />
-        </div>
-        <div class="command-window__actions">
-            <button
-                v-t="'buy'"
-                type="button"
-                class="command-window__actions__button"
-                :disabled="!canBuy"
-                @click="buyItem()"
-            ></button>
-            <button
-                v-t="'sell'"
-                type="button"
-                class="command-window__actions__button"
-                :disabled="!canSell"
-                @click="sellItem()"
-            ></button>
         </div>
     </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import { mapState, mapActions } from "pinia";
-import { ActorType, Unit, Building, Owner } from "@/definitions/actors";
-import { type Point } from "@/definitions/math";
-import { canBuildUnit, buildUnitForBuilding } from "@/model/actions/unit-actions";
-import ActorFactory from "@/model/factories/actor-factory";
-import EffectFactory from "@/model/factories/effect-factory";
-import { ACTION_STORE_NAME, useActionStore } from "@/stores/action";
-import { useGameStore } from "@/stores/game";
-import { usePlayerStore } from "@/stores/player";
-import { useSystemStore } from "@/stores/system";
-import BuildingConstructionWindow from "./components/building-construction-window.vue";
-import UnitConstructionWindow from "./components/unit-construction-window.vue";
+import BuildingConstruction from "./building-construction/building-construction.vue";
+import BuildingMaintenance from "./building-maintenance/building-maintenance.vue";
 
 import messages from "./messages.json";
 
 export default defineComponent({
     i18n: { messages },
     components: {
-        BuildingConstructionWindow,
-        UnitConstructionWindow,
+        BuildingConstruction,
+        BuildingMaintenance,
     },
     data: () => ({
-        selectedBuilding: undefined,
-        selectedUnit: undefined,
         mode: 0,
     }),
-    computed: {
-        ...mapState( useActionStore, [
-            "placement",
-        ]),
-        ...mapState( usePlayerStore, [
-            "credits",
-        ]),
-        ...mapState( useGameStore, [
-            "buildings",
-            "gameTime",
-        ]),
-        canBuy(): boolean {
-            let cost = Infinity;
-            switch ( this.mode ) {
-                default:
-                    break;
-                case 0:
-                    if ( !this.selectedBuilding ) {
-                        return false;
-                    }
-                    cost = this.selectedBuilding.cost;
-                    break;
-                case 1:
-                    if ( !this.selectedUnit || !canBuildUnit( this.selectedUnit, this.buildings )) {
-                        return false;
-                    }
-                    cost = this.selectedUnit.cost;
-                    break;
-            }
-            return cost <= this.credits;
-
-        },
-        canSell(): boolean {
-            if ( this.mode === 0 && this.selectedBuilding ) {
-                // TODO : check if player owns buildings of this type
-            }
-            return false;
-        }
-    },
-    watch: {
-        placement( position: Point | undefined ): void {
-            if ( position === undefined || this.selectedBuilding === undefined ) {
-                return;
-            }
-            this.deductCredits( this.selectedBuilding.cost );
-            const buildingActor = ActorFactory.create({
-                type: ActorType.BUILDING,
-                subClass: this.selectedBuilding.type,
-                owner: Owner.PLAYER,
-                x: position.x, y: position.y,
-                width: this.selectedBuilding.width, height: this.selectedBuilding.height
-            });
-            this.addActor( buildingActor );
-            // TODO: size of building determines duration
-            this.addEffect( EffectFactory.create({
-                store: ACTION_STORE_NAME, start: this.gameTime, duration: 5000,
-                from: 0, to: 1, action: "updateBuildingStep", target: buildingActor.id
-            }));
-            this.showNotification( this.$t( "building" ));
-            this.placeBuilding( undefined );
-        },
-    },
-    methods: {
-        ...mapActions( useActionStore, [
-            "placeBuilding",
-        ]),
-        ...mapActions( useGameStore, [
-            "addActor",
-            "addEffect",
-        ]),
-        ...mapActions( usePlayerStore, [
-            "deductCredits",
-        ]),
-        ...mapActions( useSystemStore, [
-            "showNotification",
-        ]),
-        buyItem(): void {
-            if ( this.mode === 0 ) {
-                this.placeBuilding( this.selectedBuilding );
-            } else if ( this.mode === 1 ) {
-                this.deductCredits( this.selectedUnit.cost );
-                const building = this.buildings.find(({ subClass }) => subClass === Building.REFINERY );
-                this.addActor( buildUnitForBuilding( this.selectedUnit.type, building, Owner.PLAYER ));
-            }
-        },
-        sellItem(): void {
-
-        },
-    },
 });
 </script>
 

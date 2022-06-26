@@ -23,7 +23,7 @@
 import { defineStore } from "pinia";
 import { i18n } from "@/i18n";
 import type { BuildingMapping } from "@/definitions/actors";
-import { Building, Owner } from "@/definitions/actors";
+import { ActorType, Building, Owner } from "@/definitions/actors";
 import type { Point } from "@/definitions/math";
 import { TileTypes } from "@/definitions/world-tiles";
 import { unitForBuilding, buildUnitForBuilding, navigateToPoint, handleAI } from "@/model/actions/unit-actions";
@@ -98,9 +98,11 @@ export const useActionStore = defineStore<string, ActionState, ActionGetters, Ac
             targetX = Math.round( targetX );
             targetY = Math.round( targetY );
 
-            this.selectedActors.forEach(( actor: Actor ) => {
-                navigateToPoint( actor, targetX, targetY );
-            });
+            this.selectedActors
+                .filter(({ type }) => type === ActorType.UNIT )
+                .forEach(( actor: Actor ) => {
+                    navigateToPoint( actor, targetX, targetY );
+                });
         },
         setActorX( action: ActorAction ): void {
             const compareId = action.target;

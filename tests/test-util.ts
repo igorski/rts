@@ -4,11 +4,13 @@ import ActorFactory from "@/model/factories/actor-factory";
 import type { Actor } from "@/model/factories/actor-factory";
 
 export const randomBuildingMapping = (): BuildingMapping => ({
-    type   : Building.REFINERY,
-    cost   : 500,
-    name   : "RandomRefinery",
-    width  : 3,
-    height : 2,
+    subClass: Building.REFINERY,
+    cost: 500,
+    name: "RandomRefinery",
+    width: 3,
+    height: 2,
+    z: 3,
+    constructable: true,
 });
 
 export const randomUnit = (): Actor => {

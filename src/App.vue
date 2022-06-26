@@ -30,6 +30,7 @@ import GameCanvas from "@/components/game-canvas/game-canvas.vue";
 import HeaderMenu from "@/components/header-menu/header-menu.vue";
 import Notifications from "@/components/notifications/notifications.vue";
 import WorldMap from "@/components/world-map/world-map.vue";
+import { ActorType, Building } from "@/definitions/actors";
 import { useActionStore } from "@/stores/action";
 import { useGameStore } from "@/stores/game";
 import { useStorageStore } from "@/stores/storage";
@@ -41,7 +42,7 @@ const storageStore = useStorageStore();
 
 const { hasSavedGame } = storeToRefs( storageStore );
 const { dialog } = storeToRefs( useSystemStore() );
-const { hasSelection } = storeToRefs( useActionStore() );
+const { hasSelection, selectedActors } = storeToRefs( useActionStore() );
 
 const loading = ref( true );
 
@@ -65,10 +66,14 @@ if ( hasSavedGame.value ) {
         <template v-else>
             <game-canvas />
             <div class="game-ui">
-                <command-window
-                    v-if="hasSelection"
-                />
-                <construction-window />
+                <template v-if="hasSelection">
+                    <command-window
+                        v-if="selectedActors.every(({ type }) => type === ActorType.UNIT )"
+                    />
+                    <construction-window
+                        v-if="selectedActors.every(({ type, subClass }) => type === ActorType.BUILDING && subClass === Building.CONSTRUCTION_YARD )"
+                    />
+                </template>
                 <world-map />
             </div>
         </template>
