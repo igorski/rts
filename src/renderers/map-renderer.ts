@@ -20,6 +20,7 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+import { zThreader, zThread } from "zthreader";
 import { ActorType } from "@/definitions/actors";
 import type { Rectangle } from "@/definitions/math";
 import type { EnvironmentDef, TileDef } from "@/definitions/world-tiles";
@@ -33,7 +34,7 @@ import CACHE from "./render-cache";
 
 const { TILES } = CACHE.sprites;
 
-const cvsIsometric: HTMLCanvasElement = CACHE.map.isometric;
+const cvsIsometric: HTMLCanvasElement = document.createElement( "canvas" );
 const ctxIsometric: CanvasRenderingContext2D = cvsIsometric.getContext( "2d" ) as CanvasRenderingContext2D;
 
 const cvs2D: HTMLCanvasElement = CACHE.map.flat;
@@ -45,41 +46,89 @@ const DEBUG = false;//process.env.NODE_ENV !== "production";
 /**
  * Renders given worlds tiled terrain into a pre-rendered HTMLCanvasElement
  */
-export const renderWorldMap = ( world: EnvironmentDef, actors: Actor[] = [] ) => {
-    const mapWidth  = Math.ceil( world.width * TILE_SIZE );
-    const mapHeight = verPosition( world.width, world.height ) + TILE_HEIGHT_HALF;
+export const renderWorldMap = ( world: EnvironmentDef, actors: Actor[] = [] ): Promise<void> => {
 
-    cvs2D.width  = world.width  * CVS_2D_MAGNIFIER;
-    cvs2D.height = world.height * CVS_2D_MAGNIFIER;
-    ctx2D.clearRect( 0, 0, cvs2D.width, cvs2D.height );
+    // use zThreader and zThreads as this can be quite a heavy operation
+    // investigate how we can have a canvas and images available in a Worker
 
-    cvsIsometric.width  = mapWidth;
-    cvsIsometric.height = mapHeight;
-    ctxIsometric.clearRect( 0, 0, cvsIsometric.width, cvsIsometric.height );
+    zThreader.init( 0.5, 60 );
 
-    for ( let tx = 0; tx < world.width; ++tx ) {
-        for ( let ty = 0; ty < world.height; ++ty ) {
-            renderTileIntoMap( world, world.terrain[ coordinateToIndex( tx, ty, world ) ] );
-        }
-    }
+    return new Promise( resolve => {
+        const mapWidth  = Math.ceil( world.width * TILE_SIZE );
+        const mapHeight = verPosition( world.width, world.height ) + TILE_HEIGHT_HALF;
 
-    // render building actors
+        cvs2D.width  = world.width  * CVS_2D_MAGNIFIER;
+        cvs2D.height = world.height * CVS_2D_MAGNIFIER;
+        ctx2D.clearRect( 0, 0, cvs2D.width, cvs2D.height );
 
-    const viewport = { left: 0, top: 0 } as Rectangle;
-    const halfWidth = Math.ceil( mapWidth * 0.5 );
+        cvsIsometric.width  = mapWidth;
+        cvsIsometric.height = mapHeight;
+        ctxIsometric.clearRect( 0, 0, cvsIsometric.width, cvsIsometric.height );
 
-    actors.forEach( actor => {
-        if ( actor.type !== ActorType.BUILDING ) {
-            return;
-        }
-        renderBuilding( ctxIsometric, halfWidth, viewport, actor );
+        const MAX_ITERATIONS = world.width - 1; // all columns
+        let iterations = 0;
 
-        ctx2D.fillStyle = "darkgray";
-        for ( let x = actor.x, xl = x + actor.width; x < xl; ++x ) {
-            for ( let y = actor.y, yl = y + actor.height; y < yl; ++y ) {
-                ctx2D.fillRect( x * CVS_2D_MAGNIFIER, y * CVS_2D_MAGNIFIER, CVS_2D_MAGNIFIER, CVS_2D_MAGNIFIER );
+        function renderColumn( iteration: number ): void {
+            // columns
+            for ( let tx = iteration, xx = iteration + 1; tx < xx; ++tx ) {
+                // rows
+                for ( let ty = 0; ty < world.height; ++ty ) {
+                    renderTileIntoMap( world, world.terrain[ coordinateToIndex( tx, ty, world ) ] );
+                }
             }
         }
+
+        new zThread(({
+            completeFn: () => {
+
+                // render building actors into 2D map
+
+                const viewport = { left: 0, top: 0 } as Rectangle;
+                const halfWidth = Math.ceil( mapWidth * 0.5 );
+
+                actors.forEach( actor => {
+                    if ( actor.type !== ActorType.BUILDING ) {
+                        return;
+                    }
+                    renderBuilding( ctxIsometric, halfWidth, viewport, actor );
+
+                    ctx2D.fillStyle = "darkgray";
+                    for ( let x = actor.x, xl = x + actor.width; x < xl; ++x ) {
+                        for ( let y = actor.y, yl = y + actor.height; y < yl; ++y ) {
+                            ctx2D.fillRect( x * CVS_2D_MAGNIFIER, y * CVS_2D_MAGNIFIER, CVS_2D_MAGNIFIER, CVS_2D_MAGNIFIER );
+                        }
+                    }
+                });
+
+                // the isometric map will be converted to a PNG image
+                // as Safari has performance issues rendering HTMLCanvasElement using .drawImage() API
+
+                CACHE.map.isometric.width  = mapWidth;
+                CACHE.map.isometric.height = mapHeight;
+                CACHE.map.isometric.src    = cvsIsometric.toDataURL( "image/png" );
+
+                // free memory
+                cvsIsometric.width  = 1;
+                cvsIsometric.height = 1;
+
+                resolve();
+            },
+            executionFn: () => {
+                // the amount of times we call the "render"-function
+                // per iteration of the internal execution method
+                const stepsPerIteration = 1;
+
+                for ( let i = 0; i < stepsPerIteration; ++i ) {
+                    if ( iterations >= MAX_ITERATIONS ) {
+                        return true;
+                    } else {
+                        // execute operation (and increment iteration)
+                        renderColumn( ++iterations );
+                    }
+                }
+                return false;
+            }
+        })).run(); // start crunching
     });
 };
 

@@ -34,7 +34,7 @@ type Cache = {
     },
     map: {
         flat: HTMLCanvasElement;
-        isometric: HTMLCanvasElement;
+        isometric: HTMLImageElement; // more performant than canvas when using .drawImage() on Safari
     }
 };
 
@@ -45,7 +45,7 @@ const CACHE: Cache = {
     },
     map: {
         flat: document.createElement( "canvas" ),
-        isometric: document.createElement( "canvas" )
+        isometric: new Image(),
     }
 };
 export default CACHE;

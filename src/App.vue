@@ -48,7 +48,7 @@ const loading = ref( true );
 
 async function onGameLoad(): Promise<void> {
     await initCache();
-    renderWorldMap( useGameStore().world );
+    await renderWorldMap( useGameStore().world );
     loading.value = false;
 }
 
