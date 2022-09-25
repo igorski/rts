@@ -22,6 +22,14 @@
  */
 import { loader } from "zcanvas";
 
+// whether to cache the map in its entierity
+// this uses less CPU when rendering each frame, but comes with the following caveats:
+// 1. consumes more memory
+// 2. limits map size (iOS has a maximum supported image size)
+// 3. needs rerendering of entire map when terrain changes (e.g. harvesting completes)
+// basically this is debug only
+export const PRECACHE_ISOMETRIC_MAP = false;
+
 const ASSET_FOLDER: string = "./assets/sprites/";
 const ASSETS = {
     CURSORS : "cursors.png",

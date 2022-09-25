@@ -28,14 +28,14 @@ import type { Point, Rectangle, Box, Size } from "@/definitions/math";
 import { fastRound } from "@/definitions/math";
 import type { TileDef, EnvironmentDef } from "@/definitions/world-tiles";
 import {
-    TileTypes, TILE_SIZE, TILE_WIDTH_HALF, TILE_HEIGHT_HALF,
-    horPosition, verPosition, amountOfTilesInWidth, amountOfTilesInHeight
+    TileTypes, TILE_SIZE, TILE_WIDTH_HALF, TILE_HEIGHT_HALF, horPosition, verPosition
 } from "@/definitions/world-tiles";
 import { sortByDepth } from "@/utils/render-util";
 import { coordinateToIndex } from "@/utils/terrain-util";
 import DirectionBox from "@/model/math/direction-box";
-import CACHE from "./render-cache";
+import CACHE, { PRECACHE_ISOMETRIC_MAP } from "./render-cache";
 import { renderBuilding } from "./building-renderer";
+import { getMapSize, renderTileIsometric } from "./map-renderer";
 import { renderUnit } from "./unit-renderer";
 
 const { CURSORS, TILES } = CACHE.sprites;
@@ -45,6 +45,7 @@ const pointCache: Point[] = [];
 let halfMap: number = 0;
 
 const POINTER_HIT_AREA = 50;
+const DEBUG = process.env.NODE_ENV !== "production";
 
 export enum CanvasActions {
     ACTOR_SELECT,
@@ -62,6 +63,7 @@ export default class GameRenderer extends sprite {
     private mapCenterY: number = 0;
     private pointerPos: Point = { x: Infinity, y: Infinity };
     private edges: Box = { left: 0, right: 0, top: 0, bottom: 0 };
+    private visible: Box = { left: 0, right: 0, top: 0, bottom: 0 };
     private pointerActions: DirectionBox = new DirectionBox();
     private horizontalTileAmount: number = 0;
     private verticalTileAmount: number = 0;
@@ -88,15 +90,17 @@ export default class GameRenderer extends sprite {
         this.actors  = actors;
     }
 
-    setWorldSize( width: number, height: number ): void {
-        this.horizontalTileAmount = amountOfTilesInWidth( width )
-        this.verticalTileAmount   = amountOfTilesInHeight( height );
+    setWorldSize( width: number, height: number, horizontalTileAmount: number, verticalTileAmount: number ): void {
+        this.horizontalTileAmount = horizontalTileAmount;
+        this.verticalTileAmount   = verticalTileAmount;
 
-        console.warn(
-            "tile amount hor and ver:"+this.horizontalTileAmount + " " + this.verticalTileAmount,
-            " world pos " + this.world.x + " x " + this.world.y,
-            " coord for world pos would be " + horPosition( this.world.x, this.world.y ) + " x " + verPosition( this.world.x, this.world.y)
-        );
+        if ( DEBUG ) {
+            console.info(
+                `tile amount hor and ver: ${this.horizontalTileAmount}x${this.verticalTileAmount} ` +
+                `world pos: ${this.world.x}x${this.world.y} ` +
+                `coord for world pos would be: ${horPosition( this.world.x, this.world.y )}x${verPosition( this.world.x, this.world.y )}`
+            );
+        }
 
         // ensure the hit area matches the bounding box, make up for canvas scale factor
         const { x, y } = this.canvas._scale;
@@ -104,7 +108,7 @@ export default class GameRenderer extends sprite {
         this.setWidth( width * x );
         this.setHeight( height * y );
 
-        halfMap = renderedMap.width / 2;
+        halfMap = getMapSize( this.world ).width / 2;
 
         // invalidates viewport cache (see update())
         this.lastX = 0;
@@ -168,13 +172,15 @@ export default class GameRenderer extends sprite {
             case "touchdown":
 
                 // debug info, what is the range of visible tiles we can see ?
-                console.log(
-                    "top left:"+ JSON.stringify( this.absoluteToTile( this.viewport.left, this.viewport.top )),
-                    "bottom right:"+ JSON.stringify( this.absoluteToTile(
-                        this.viewport.left + this.viewport.width, this.viewport.top + this.viewport.height
-                    )),
-                );
-                console.log("mouse coord at " + absoluteX + " x " + absoluteY + ", clicked on tile " + JSON.stringify( this.pointerPos ) + " of type " + this.world.terrain.find( tile => tile.x === this.pointerPos.x && tile.y === this.pointerPos.y )?.type );
+                if ( DEBUG ) {
+                    console.info(
+                        `top left: ${JSON.stringify( this.absoluteToTile( this.viewport.left, this.viewport.top ))} ` +
+                        `bottom right: ${JSON.stringify( this.absoluteToTile(
+                            this.viewport.left + this.viewport.width, this.viewport.top + this.viewport.height
+                        ))}`,
+                    );
+                    console.info( `mouse coordinate ${absoluteX}x${absoluteY}, corresponds to tile ${JSON.stringify( this.pointerPos )} of type ${this.world.terrain.find( tile => tile.x === this.pointerPos.x && tile.y === this.pointerPos.y )?.type}`);
+                }
 
                 if ( this.placeMode !== undefined ) {
                     if ( !this.canPlace() ) {
@@ -235,20 +241,57 @@ export default class GameRenderer extends sprite {
              */
              //this.visibleActors.length = 0;
              this.visibleActors = this.actors;
+
+             // cache the visible area
+
+             const tl = this.absoluteToTile( this.viewport.left, this.viewport.top, false );
+             const br = this.absoluteToTile(
+                 this.viewport.left + this.viewport.width, this.viewport.top + this.viewport.height, false
+             );
+             const HALF_TILE_AMOUNT_IN_WIDTH  = this.horizontalTileAmount / 2;
+             const HALF_TILE_AMOUNT_IN_HEIGHT = this.verticalTileAmount / 2;
+
+             this.visible.left   = /*tl.x;*/ Math.max( 0, fastRound( tl.x - HALF_TILE_AMOUNT_IN_WIDTH ));
+             this.visible.top    = Math.max( 0, fastRound( tl.y - this.verticalTileAmount ));
+             this.visible.right  = Math.min( this.world.width - 1, fastRound( this.visible.left + this.horizontalTileAmount + HALF_TILE_AMOUNT_IN_WIDTH ));
+             this.visible.bottom = Math.min( this.world.height - 1, fastRound( tl.y + this.verticalTileAmount + HALF_TILE_AMOUNT_IN_HEIGHT ));
+
+             if ( DEBUG ) {
+                 console.info('vp:'+JSON.stringify(this.viewport)+',tl:'+JSON.stringify(tl)+',visibles:'+JSON.stringify(this.visible),this.horizontalTileAmount,this.verticalTileAmount, this.world.width + ' x ' + this.world.height);
+            }
         }
     }
 
     draw( ctx: CanvasRenderingContext2D ): void {
 
-        // 1. draw cached background
+        // 1. render background tiles
 
-        ctx.drawImage(
-            renderedMap,
-            this.viewport.left, this.viewport.top,
-            this.viewport.width, this.viewport.height,
-            0, 0,
-            this.viewport.width, this.viewport.height,
-        );
+        if ( PRECACHE_ISOMETRIC_MAP ) {
+            // 1.1 render from cache
+            ctx.drawImage(
+                renderedMap,
+                this.viewport.left, this.viewport.top,
+                this.viewport.width, this.viewport.height,
+                0, 0,
+                this.viewport.width, this.viewport.height,
+            );
+
+        } else {
+            // 1.2 live render
+            const viewport = {
+                ...this.viewport,
+                left: this.viewport.left - ( this.viewport.width / 2 ),
+            //    top: this.viewport.top - ( this.viewport.height / 2 ),
+            };
+
+            // columns
+            for ( let tx = this.visible.left; tx < this.visible.right; ++tx ) {
+                // rows
+                for ( let ty = this.visible.top; ty < this.visible.bottom; ++ty ) {
+                    renderTileIsometric( this.world, this.world.terrain[ coordinateToIndex( tx, ty, this.world ) ], ctx, viewport );
+                }
+            }
+        }
 
         // 2. draw cursor position
 
@@ -311,15 +354,16 @@ export default class GameRenderer extends sprite {
     /**
      * Retrieves a tile from an absolute, isometric render coordinate
      */
-    private absoluteToTile( x: number, y: number ): Point {
-        const out = { x: Infinity, y: Infinity };
+    private absoluteToTile( x: number, y: number, limitRange: boolean = true ): Point {
+        const out = { x: 0, y: 0 };//Infinity, y: Infinity };
+        const { width, height } = this.world;
 
         // 2D coordinate of tile under mouse position
-        const tileX = fastRound((( y + x * 0.5 ) / this.actualTileHeight ) - ( this.world.width * 0.5 ));
-        const tileY = fastRound((( y - x * 0.5 ) / this.actualTileHeight ) + ( this.world.height * 0.5 ));
+        const tileX = fastRound((( y + x * 0.5 ) / this.actualTileHeight ) - ( width  * 0.5 ));
+        const tileY = fastRound((( y - x * 0.5 ) / this.actualTileHeight ) + ( height * 0.5 ));
 
-        if ( tileX < 0 || tileX > this.world.width || tileY < 0 || tileY > this.world.height ) {
-            return out; // tile is out of world bounds
+        if ( limitRange && ( tileX < 0 || tileX > width || tileY < 0 || tileY > height )) {
+            return out; // tile is outside of world bounds
         }
         out.x = tileX;
         out.y = tileY;
