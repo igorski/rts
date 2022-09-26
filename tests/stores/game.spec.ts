@@ -13,7 +13,7 @@ vi.mock( "@/model/actions/unit-actions", () => unitActionsMock );
 const mapRendererMock = {
     renderWorldMap: vi.fn()
 };
-vi.mock( "@/renderers/map-renderer", () => mapRendererMock );
+vi.mock( "@/renderers/environment-renderer", () => mapRendererMock );
 
 
 import type { Store } from "pinia";

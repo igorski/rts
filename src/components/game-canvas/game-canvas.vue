@@ -38,7 +38,7 @@ import type { EnvironmentDef, TileDef } from "@/definitions/world-tiles";
 import { CameraActions } from "@/definitions/camera-actions";
 import { TILE_SIZE } from "@/definitions/world-tiles";
 import { Actor } from "@/model/factories/actor-factory";
-import { renderWorldMap } from "@/renderers/map-renderer";
+import { renderWorldMap } from "@/renderers/environment-renderer";
 import GameRenderer, { CanvasActions } from "@/renderers/game-renderer";
 import WorldMap from "@/components/world-map/world-map.vue";
 import { useActionStore } from "@/stores/action";

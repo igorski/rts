@@ -36,7 +36,7 @@ import { useGameStore } from "@/stores/game";
 import { useStorageStore } from "@/stores/storage";
 import { useSystemStore } from "@/stores/system";
 import { initCache } from "@/renderers/render-cache";
-import { renderWorldMap } from "@/renderers/map-renderer";
+import { renderWorldMap } from "@/renderers/environment-renderer";
 
 const storageStore = useStorageStore();
 

@@ -36,7 +36,7 @@ import { coordinateToIndex } from "@/utils/terrain-util";
 import DirectionBox from "@/model/math/direction-box";
 import CACHE from "./render-cache";
 import { renderBuilding } from "./building-renderer";
-import { getMapSize, renderTileIsometric } from "./map-renderer";
+import { getMapSize, renderTileIsometric } from "./environment-renderer";
 import { renderUnit } from "./unit-renderer";
 
 const { CURSORS, TILES } = CACHE.sprites;
@@ -249,8 +249,8 @@ export default class GameRenderer extends sprite {
             const br = this.absoluteToTile(
                 this.viewport.left + this.viewport.width, this.viewport.top + this.viewport.height, false
             );
-            const HALF_TILE_AMOUNT_IN_WIDTH  = this.horizontalTileAmount / 2;
-            const HALF_TILE_AMOUNT_IN_HEIGHT = this.verticalTileAmount / 2;
+            const HALF_TILE_AMOUNT_IN_WIDTH  = ( this.horizontalTileAmount / 2 ) + 1;
+            const HALF_TILE_AMOUNT_IN_HEIGHT = ( this.verticalTileAmount / 2 ) + 1;
 
             this.visibleTiles.left   = Math.max( 0, fastRound( tl.x - HALF_TILE_AMOUNT_IN_WIDTH ));
             this.visibleTiles.top    = Math.max( 0, fastRound( tl.y - HALF_TILE_AMOUNT_IN_HEIGHT ));
