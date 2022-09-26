@@ -365,7 +365,7 @@ function generateBases( world: EnvironmentDef, amountOfBases: number = 2 ): Base
         /*
         let amount = randomInRangeInt( 1, 4 );
         if ( DEBUG ) {
-            console.warn("generate " + amount + " buildings for base " + (index + 1 )+ " at coords " + centerX + " x " + centerY);
+            console.warn("generated " + amount + " buildings for base " + (index + 1 )+ " at coords " + centerX + " x " + centerY);
         }
         generateGroup(
             world.buildings, width, height, centerX, centerY, world, amount,

@@ -20,6 +20,7 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+import { DEBUG_AI } from "@/config";
 import { Building, AiActions } from "@/definitions/actors";
 import type { Point } from "@/definitions/math";
 import { TileTypes } from "@/definitions/world-tiles";
@@ -31,8 +32,6 @@ import { ACTION_STORE_NAME } from "@/stores/action";
 import { useGameStore } from "@/stores/game";
 import { usePlayerStore } from "@/stores/player";
 import { findNearestPointOfType, findNearestBuildingOfClass, coordinateToIndex } from "@/utils/terrain-util";
-
-const DEBUG = process.env.NODE_ENV !== "production";
 
 // the amount of progress each individual harvesting step can reach
 const FILL_RATE = 0.25;
@@ -50,7 +49,7 @@ export const handleHarvesterAI = ( unit: Actor ): void => {
             break;
 
         case AiActions.GOTO_WAYPOINT:
-            if ( DEBUG ) {
+            if ( DEBUG_AI ) {
                 console.warn( `Unit ${unit.id} reached waypoint.` );
             }
             // if current position is not a harvestable area, reset action (harvester will navigate again)

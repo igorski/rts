@@ -21,8 +21,10 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 import { zThreader, zThread } from "zthreader";
+import { DEBUG_UI, PRECACHE_ISOMETRIC_MAP } from "@/config";
 import { ActorType } from "@/definitions/actors";
 import type { Rectangle, Size } from "@/definitions/math";
+import { fastRound } from "@/definitions/math";
 import type { EnvironmentDef, TileDef } from "@/definitions/world-tiles";
 import {
     TileTypes, TILE_SIZE, TILE_WIDTH_HALF, TILE_HEIGHT_HALF, horPosition, verPosition
@@ -30,7 +32,7 @@ import {
 import type { Actor } from "@/model/factories/actor-factory";
 import { coordinateToIndex } from "@/utils/terrain-util";
 import { renderBuilding } from "./building-renderer";
-import CACHE, { PRECACHE_ISOMETRIC_MAP } from "./render-cache";
+import CACHE from "./render-cache";
 
 const { TILES } = CACHE.sprites;
 const TOP_LEFT: Rectangle = { left: 0, top: 0, width: 0, height: 0 };
@@ -42,7 +44,6 @@ const cvs2D: HTMLCanvasElement = CACHE.map.flat;
 const ctx2D: CanvasRenderingContext2D = cvs2D.getContext( "2d" ) as CanvasRenderingContext2D;
 
 export const CVS_2D_MAGNIFIER = 2;
-const DEBUG = false;//process.env.NODE_ENV !== "production";
 
 /**
  * Calculate the width and height of given worlds map in pixels
@@ -63,8 +64,8 @@ export const renderWorldMap = ( world: EnvironmentDef, actors: Actor[] = [] ): P
     zThreader.init( 0.5, 60 );
 
     return new Promise( resolve => {
-        if ( process.env.NODE_ENV !== "production" && !PRECACHE_ISOMETRIC_MAP ) {
-            console.info( "Caching of full size Map disabled." );
+        if ( DEBUG_UI ) {
+            console.info( PRECACHE_ISOMETRIC_MAP ? "Caching full size world map." : "Caching of full size world map disabled." );
         }
         const { width: mapWidth, height: mapHeight } = getMapSize( world );
 
@@ -206,8 +207,8 @@ export const renderTileIsometric = ( world: EnvironmentDef, tile: TileDef, ctx: 
     const { left, top } = viewport;
 
     for ( let i = 0; i < height; ++i ) {
-        const destX = ( halfWidth + ( horPosition( x, y ) - TILE_WIDTH_HALF )) - left;
-        const destY = ( TILE_HEIGHT_HALF + (( verPosition( x, y ) - TILE_HEIGHT_HALF ) - ( i * TILE_HEIGHT_HALF ))) - top;
+        const destX = fastRound(( halfWidth + ( horPosition( x, y ) - TILE_WIDTH_HALF )) - left );
+        const destY = fastRound(( TILE_HEIGHT_HALF + (( verPosition( x, y ) - TILE_HEIGHT_HALF ) - ( i * TILE_HEIGHT_HALF ))) - top );
         ctx.drawImage(
             TILES,
             spriteX,
@@ -222,7 +223,7 @@ export const renderTileIsometric = ( world: EnvironmentDef, tile: TileDef, ctx: 
 
         // DEBUG - add coordinate text for 2D tile index and absolute pixel offset
 
-        if ( DEBUG ) {
+        if ( DEBUG_UI ) {
             ctx.font = "10px Arial";
             ctx.fillText(`${x}:${y}`, destX + TILE_WIDTH_HALF / 2, destY + TILE_HEIGHT_HALF / 2 );
             ctx.fillText(`  ${destX}x${destY}`, destX + TILE_WIDTH_HALF / 2, destY + TILE_HEIGHT_HALF / 1.5 );

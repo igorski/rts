@@ -21,6 +21,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 import type { Store } from "pinia";
+import { DEBUG_AI } from "@/config";
 import type { UnitMapping } from "@/definitions/actors";
 import { ActorType, Unit, Building, Owner, AiActions, getUnitMappings } from "@/definitions/actors";
 import type { Point } from "@/definitions/math";
@@ -37,8 +38,6 @@ import { handleHarvesterAI } from "@/model/actions/ai/harvester";
 export const HANDLE_AI_ACTION_COMPLETION = "handleAIActionEnd";
 const DEFAULT_WALK_SPEED = 800; // ms per single step
 
-const DEBUG = process.env.NODE_ENV !== "production";
-
 export type UnitCommand = {
     name: string;
     action: AiActions;
@@ -49,7 +48,7 @@ export type UnitCommand = {
  * to give it a new task to do.
  */
 export const handleAI = ( unit: Actor ): void  => {
-    if ( DEBUG ) {
+    if ( DEBUG_AI ) {
         console.warn( `handleAI for Unit of ${unit.id} (class type ${unit.subClass})` );
     }
     switch ( unit.subClass as Unit ) {

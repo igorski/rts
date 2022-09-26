@@ -20,47 +20,27 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-import { loader } from "zcanvas";
 
-const ASSET_FOLDER: string = "./assets/sprites/";
-const ASSETS = {
-    CURSORS : "cursors.png",
-    TILES   : "tiles.png"
-};
+/**
+ * when enabled, this will log messages related to rendering the game world
+ */
+export const DEBUG_UI = true && process.env.NODE_ENV !== "production";
 
-type Cache = {
-    sprites: {
-        [key: string]: HTMLImageElement;
-    },
-    map: {
-        flat: HTMLCanvasElement;
-        isometric: HTMLImageElement; // more performant than canvas when using .drawImage() on Safari
-    }
-};
+/**
+ * when enabled, this will log messages related to game Actor updates
+ */
+export const DEBUG_AI = true && process.env.NODE_ENV !== "production";
 
-const CACHE: Cache = {
-    sprites: {
-        CURSORS : new Image(),
-        TILES   : new Image(),
-    },
-    map: {
-        flat: document.createElement( "canvas" ),
-        isometric: new Image(),
-    }
-};
-export default CACHE;
-
-export const initCache = (): Promise<void> => {
-    return new Promise( async ( resolve, reject ) => {
-        const entries = Object.entries( ASSETS );
-        for ( let i = 0; i < entries.length; ++i ) {
-            const [ key, path ] = entries[ i ];
-            try {
-                await loader.loadImage( `${ASSET_FOLDER}${path}`, CACHE.sprites[ key ]);
-            } catch ( e ) {
-                reject( e );
-            }
-        }
-        resolve();
-    });
-}
+/**
+ * whether to cache the isometric map (e.g. the main game view) in its entierity
+ * this uses less CPU when rendering each frame, but comes with the following caveats:
+ *
+ * 1. consumes more memory
+ * 2. limits map size (iOS has a maximum supported image size)
+ * 3. needs rerendering of entire map when terrain changes (e.g. harvesting completes)
+ *    which is unforgivably heavy when exporting canvas as PNG (as Safari struggles
+ *    with rendering HTMLCanvasElement sources using drawImage())
+ *
+ * basically this is debug only
+ */
+export const PRECACHE_ISOMETRIC_MAP = false;

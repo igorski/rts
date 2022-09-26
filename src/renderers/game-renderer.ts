@@ -21,6 +21,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 import { sprite } from "zcanvas";
+import { DEBUG_UI, PRECACHE_ISOMETRIC_MAP } from "@/config";
 import { CameraActions } from "@/definitions/camera-actions";
 import type { Actor } from "@/definitions/actors";
 import { ActorType } from "@/definitions/actors";
@@ -33,7 +34,7 @@ import {
 import { sortByDepth } from "@/utils/render-util";
 import { coordinateToIndex } from "@/utils/terrain-util";
 import DirectionBox from "@/model/math/direction-box";
-import CACHE, { PRECACHE_ISOMETRIC_MAP } from "./render-cache";
+import CACHE from "./render-cache";
 import { renderBuilding } from "./building-renderer";
 import { getMapSize, renderTileIsometric } from "./map-renderer";
 import { renderUnit } from "./unit-renderer";
@@ -42,10 +43,10 @@ const { CURSORS, TILES } = CACHE.sprites;
 const renderedMap = CACHE.map.isometric;
 const sortedActors: Actor[] = [];
 const pointCache: Point[] = [];
+let point: Point;
 let halfMap: number = 0;
 
 const POINTER_HIT_AREA = 50;
-const DEBUG = process.env.NODE_ENV !== "production";
 
 export enum CanvasActions {
     ACTOR_SELECT,
@@ -63,7 +64,6 @@ export default class GameRenderer extends sprite {
     private mapCenterY: number = 0;
     private pointerPos: Point = { x: Infinity, y: Infinity };
     private edges: Box = { left: 0, right: 0, top: 0, bottom: 0 };
-    private visible: Box = { left: 0, right: 0, top: 0, bottom: 0 };
     private pointerActions: DirectionBox = new DirectionBox();
     private horizontalTileAmount: number = 0;
     private verticalTileAmount: number = 0;
@@ -72,6 +72,7 @@ export default class GameRenderer extends sprite {
     private interactionCallback: Function;
     private placeMode: Size | undefined;
     private visibleActors: Actor[] = [];
+    private visibleTiles: Box = { left: 0, right: 0, top: 0, bottom: 0 };
     private lastX: number = 0;
     private lastY: number = 0;
     private lastActorAmount: number = 0;
@@ -94,7 +95,7 @@ export default class GameRenderer extends sprite {
         this.horizontalTileAmount = horizontalTileAmount;
         this.verticalTileAmount   = verticalTileAmount;
 
-        if ( DEBUG ) {
+        if ( DEBUG_UI ) {
             console.info(
                 `tile amount hor and ver: ${this.horizontalTileAmount}x${this.verticalTileAmount} ` +
                 `world pos: ${this.world.x}x${this.world.y} ` +
@@ -172,7 +173,7 @@ export default class GameRenderer extends sprite {
             case "touchdown":
 
                 // debug info, what is the range of visible tiles we can see ?
-                if ( DEBUG ) {
+                if ( DEBUG_UI ) {
                     console.info(
                         `top left: ${JSON.stringify( this.absoluteToTile( this.viewport.left, this.viewport.top ))} ` +
                         `bottom right: ${JSON.stringify( this.absoluteToTile(
@@ -236,29 +237,30 @@ export default class GameRenderer extends sprite {
         if ( panned || this.lastActorAmount !== this.actors.length ) {
             this.lastActorAmount = this.actors.length;
             /**
-             * TODO within visible area calculations ? (happens in draw() anyways...)
-             * but need to solve issue with movable actors first. perhaps split in buildings and units.
-             */
-             //this.visibleActors.length = 0;
-             this.visibleActors = this.actors;
+            * TODO calculate which actors are within the visible area ? (happens in draw() now...)
+            * but need to solve issue with movable actors first. perhaps split into buildings and units.
+            */
+            //this.visibleActors.length = 0;
+            this.visibleActors = this.actors;
 
-             // cache the visible area
+            // cache the visible area
 
-             const tl = this.absoluteToTile( this.viewport.left, this.viewport.top, false );
-             const br = this.absoluteToTile(
-                 this.viewport.left + this.viewport.width, this.viewport.top + this.viewport.height, false
-             );
-             const HALF_TILE_AMOUNT_IN_WIDTH  = this.horizontalTileAmount / 2;
-             const HALF_TILE_AMOUNT_IN_HEIGHT = this.verticalTileAmount / 2;
+            const tl = this.absoluteToTile( this.viewport.left, this.viewport.top, false );
+            const br = this.absoluteToTile(
+                this.viewport.left + this.viewport.width, this.viewport.top + this.viewport.height, false
+            );
+            const HALF_TILE_AMOUNT_IN_WIDTH  = this.horizontalTileAmount / 2;
+            const HALF_TILE_AMOUNT_IN_HEIGHT = this.verticalTileAmount / 2;
 
-             this.visible.left   = /*tl.x;*/ Math.max( 0, fastRound( tl.x - HALF_TILE_AMOUNT_IN_WIDTH ));
-             this.visible.top    = Math.max( 0, fastRound( tl.y - this.verticalTileAmount ));
-             this.visible.right  = Math.min( this.world.width - 1, fastRound( this.visible.left + this.horizontalTileAmount + HALF_TILE_AMOUNT_IN_WIDTH ));
-             this.visible.bottom = Math.min( this.world.height - 1, fastRound( tl.y + this.verticalTileAmount + HALF_TILE_AMOUNT_IN_HEIGHT ));
-
-             if ( DEBUG ) {
-                 console.info('vp:'+JSON.stringify(this.viewport)+',tl:'+JSON.stringify(tl)+',visibles:'+JSON.stringify(this.visible),this.horizontalTileAmount,this.verticalTileAmount, this.world.width + ' x ' + this.world.height);
+            this.visibleTiles.left   = Math.max( 0, fastRound( tl.x - HALF_TILE_AMOUNT_IN_WIDTH ));
+            this.visibleTiles.top    = Math.max( 0, fastRound( tl.y - HALF_TILE_AMOUNT_IN_HEIGHT ));
+            this.visibleTiles.right  = Math.min( this.world.width  - 1, br.x );
+            this.visibleTiles.bottom = Math.min( this.world.height - 1, fastRound( tl.y + this.verticalTileAmount + HALF_TILE_AMOUNT_IN_HEIGHT ));
+            /*
+            if ( DEBUG_UI ) {
+                console.info( `top left tile:${JSON.stringify(tl)}, bottom right tile:${JSON.stringify(br)}, visible area:${JSON.stringify(this.visibleTiles)}`);
             }
+            */
         }
     }
 
@@ -267,7 +269,7 @@ export default class GameRenderer extends sprite {
         // 1. render background tiles
 
         if ( PRECACHE_ISOMETRIC_MAP ) {
-            // 1.1 render from cache
+            // 1.1 render visible area from full size cache
             ctx.drawImage(
                 renderedMap,
                 this.viewport.left, this.viewport.top,
@@ -277,18 +279,13 @@ export default class GameRenderer extends sprite {
             );
 
         } else {
-            // 1.2 live render
-            const viewport = {
-                ...this.viewport,
-                left: this.viewport.left - ( this.viewport.width / 2 ),
-            //    top: this.viewport.top - ( this.viewport.height / 2 ),
-            };
-
-            // columns
-            for ( let tx = this.visible.left; tx < this.visible.right; ++tx ) {
-                // rows
-                for ( let ty = this.visible.top; ty < this.visible.bottom; ++ty ) {
-                    renderTileIsometric( this.world, this.world.terrain[ coordinateToIndex( tx, ty, this.world ) ], ctx, viewport );
+            // 1.2 render visible tiles at runtime
+            // 1.2.1 columns
+            const { top, right, bottom } = this.visibleTiles;
+            for ( let tx = this.visibleTiles.left; tx < right; ++tx ) {
+                // 1.2.2 rows
+                for ( let ty = top; ty < bottom; ++ty ) {
+                    renderTileIsometric( this.world, this.world.terrain[ coordinateToIndex( tx, ty, this.world ) ], ctx, this.viewport );
                 }
             }
         }
@@ -301,7 +298,7 @@ export default class GameRenderer extends sprite {
             const canPlace = this.canPlace();
             for ( let x = 0; x < width; ++x ) {
                 for ( let y = 0; y < height; ++y ) {
-                    const point = this.tileToLocal( this.pointerPos.x + x, this.pointerPos.y + y );
+                    point = this.tileToLocal( this.pointerPos.x + x, this.pointerPos.y + y );
                     ctx.drawImage(
                         CURSORS,
                         canPlace ? 0 : 128, 0,
@@ -313,7 +310,7 @@ export default class GameRenderer extends sprite {
             }
         } else if ( this.pointerPos.x !== Infinity ) {
             // 2.2 show regular pointer cursor
-            const point = this.tileToLocal( this.pointerPos.x, this.pointerPos.y );
+            point = this.tileToLocal( this.pointerPos.x, this.pointerPos.y );
             ctx.drawImage(
                 CURSORS,
                 0, 0, 128, 128,
@@ -331,7 +328,8 @@ export default class GameRenderer extends sprite {
 
         for ( const actor: Actor of this.visibleActors ) {
             // TODO cache these points for immobile actors
-            const point = this.tileToLocal( actor.x, actor.y );
+            // TODO take actor dimensions into account (right and bottom edges are now out of view)
+            point = this.tileToLocal( actor.x, actor.y );
             if ( point.x >= 0 && point.x <= width && point.y >= 0 && point.y <= height ) {
                 sortedActors.push( actor );
                 pointCache[ actor.id ] = point;
@@ -341,7 +339,7 @@ export default class GameRenderer extends sprite {
 
         for ( const actor: Actor of sortedActors ) {
             if ( actor.type === ActorType.UNIT ) {
-                const point = pointCache[ actor.id ];
+                point = pointCache[ actor.id ];
                 renderUnit( ctx, point, actor );
             } else if ( actor.type === ActorType.BUILDING ) {
                 renderBuilding( ctx, halfMap, this.viewport, actor );
