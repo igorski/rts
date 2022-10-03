@@ -253,7 +253,7 @@ export default class GameRenderer extends sprite {
             const HALF_TILE_AMOUNT_IN_HEIGHT = ( this.verticalTileAmount / 2 ) + 1;
 
             this.visibleTiles.left   = Math.max( 0, fastRound( tl.x - HALF_TILE_AMOUNT_IN_WIDTH ));
-            this.visibleTiles.top    = Math.max( 0, fastRound( tl.y - HALF_TILE_AMOUNT_IN_HEIGHT ));
+            this.visibleTiles.top    = Math.max( 0, fastRound( br.y - ( HALF_TILE_AMOUNT_IN_HEIGHT + 2 )));
             this.visibleTiles.right  = Math.min( this.world.width  - 1, br.x );
             this.visibleTiles.bottom = Math.min( this.world.height - 1, fastRound( tl.y + this.verticalTileAmount + HALF_TILE_AMOUNT_IN_HEIGHT ));
             /*
