@@ -38,7 +38,7 @@ import type { EnvironmentDef, TileDef } from "@/definitions/world-tiles";
 import { CameraActions } from "@/definitions/camera-actions";
 import { TILE_SIZE } from "@/definitions/world-tiles";
 import { Actor } from "@/model/factories/actor-factory";
-import { renderWorldMap } from "@/renderers/map-renderer";
+import { renderWorldMap } from "@/renderers/environment-renderer";
 import GameRenderer, { CanvasActions } from "@/renderers/game-renderer";
 import WorldMap from "@/components/world-map/world-map.vue";
 import { useActionStore } from "@/stores/action";
@@ -72,6 +72,9 @@ export default defineComponent({
         ...mapState( useCameraStore, [
             "cameraX",
             "cameraY",
+        ]),
+        ...mapState( useSystemStore, [
+            "screenSize",
         ]),
     },
     watch: {
@@ -151,6 +154,7 @@ export default defineComponent({
         ]),
         ...mapActions( useSystemStore, [
             "setMessage",
+            "setScreenSize",
         ]),
         handleResize(): void {
             const { clientWidth, clientHeight } = document.documentElement;
@@ -168,10 +172,15 @@ export default defineComponent({
                 tilesInWidth  = tileWidth * MIN_AMOUNT_OF_TILES;
                 tilesInHeight = Math.round(( clientHeight / clientWidth ) * tilesInWidth );
             }
-            console.warn(clientWidth,clientHeight,tilesInWidth,tilesInHeight);
-            zCanvasInstance.setDimensions( tilesInWidth, tilesInHeight );
-            zCanvasInstance.scale( clientWidth / tilesInWidth, clientHeight / tilesInHeight );
-            renderer.setWorldSize( tilesInWidth, tilesInHeight );
+            console.info( `client dimensions: ${clientWidth}x${clientHeight}, tile amount: ${tilesInWidth}x${tilesInHeight}` );
+            this.setScreenSize( tilesInWidth, tilesInHeight );
+
+            zCanvasInstance.setDimensions( this.screenSize.width, this.screenSize.height );
+            zCanvasInstance.scale( clientWidth / this.screenSize.width, clientHeight / this.screenSize.height );
+            renderer.setWorldSize(
+                this.screenSize.width, this.screenSize.height,
+                this.screenSize.tilesInWidth, this.screenSize.tilesInHeight
+            );
         },
         updateGame( timestamp: number, framesSinceLastUpdate: number ): void {
             this.update( timestamp );

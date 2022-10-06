@@ -30,7 +30,7 @@ import { handleAI } from "@/model/actions/unit-actions";
 import type { Actor } from "@/model/factories/actor-factory";
 import type { Effect } from "@/model/factories/effect-factory";
 import GameFactory, { type Game } from "@/model/factories/game-factory";
-import { renderWorldMap } from "@/renderers/map-renderer";
+import { renderWorldMap } from "@/renderers/environment-renderer";
 import { coordinateToIndex } from "@/utils/terrain-util";
 
 export const GAME_STORE_NAME = "game";

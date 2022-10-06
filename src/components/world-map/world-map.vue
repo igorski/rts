@@ -33,7 +33,7 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import { mapState, mapActions } from "pinia";
-import { CVS_2D_MAGNIFIER } from "@/renderers/map-renderer";
+import { CVS_2D_MAGNIFIER } from "@/renderers/environment-renderer";
 import CACHE from "@/renderers/render-cache";
 import { useCameraStore } from "@/stores/camera";
 
